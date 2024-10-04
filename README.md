@@ -49,7 +49,7 @@ A monitoring solution for Hyperliquid nodes using Prometheus, Grafana and [hyper
 
 - Custom Prometheus exporter for Hyperliquid nodes
 - Pre-configured Grafana dashboards
-- Dockerized setup for ease deployment
+- Dockerized setup for ease of deployment
 
 ## Prerequisites
 
