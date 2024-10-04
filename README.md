@@ -101,7 +101,7 @@ docker-compose up -d
 - **Exporter Code**: [validaoxyz/hyperliquid-exporter](https://github.com/validaoxyz/hyperliquid-exporter).
 
 ## Docs
-Docs on metrics can be found under [docs/](https://github.com/validaoxyz/purrmetheus/docs/metrics)
+Docs (for now -- on metrics) can be found under [docs/](/docs/metrics)
 
 ## Contributing
 Contributions are greatly appreciated. Please submit a PR or open an issue on GitHub.
