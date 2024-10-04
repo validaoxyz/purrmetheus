@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  hl_exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_ID: ${USER_ID}
+        GROUP_ID: ${GROUP_ID}
+    container_name: hl_exporter
+    environment:
+      - HOSTNAME=hl_exporter
+      - NODE_HOME=/node_home/
+    volumes:
+      - ./:/app
+      - ${NODE_HOME}:/node_home/
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - prometheus_data:/prometheus
+      - ${PWD}/../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.listen-address=:9099'
+    depends_on:
+      - hl_exporter
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana  # Named volume for Grafana data persistence
+      - ${PWD}/../grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ${PWD}/../grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ${PWD}/../grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:

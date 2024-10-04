@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'hyperliquid'
+    static_configs:
+      - targets:
+        - 'hl_exporter:8086'
+
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets:
+        - 'node_exporter:9100'
