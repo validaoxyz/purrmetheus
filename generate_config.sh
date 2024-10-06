@@ -26,8 +26,8 @@ else
 fi
 
 if [ -z "$NODE_BINARY" ]; then
-    export NODE_BINARY="${HOME}/hl-visor"
-    echo "NODE_BINARY is not set in .env file. Using default path: ${HOME}/hl-visor"
+    export NODE_BINARY="${HOME}/hl-node"
+    echo "NODE_BINARY is not set in .env file. Using default path: ${HOME}/hl-node"
 else
     echo "Using NODE_BINARY=$NODE_BINARY"
 fi
