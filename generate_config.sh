@@ -26,9 +26,22 @@ else
     echo "Using NODE_HOME=$NODE_HOME"
 fi
 
+if [ -z "$GRAFANA_ADMIN_USER" ]; then
+    export GRAFANA_ADMIN_USER="admin"
+    echo "GRAFANA_ADMIN_USER is not set in .env file. Using user: admin"
+else
+    echo "Using GRAFANA_ADMIN_USER=$GRAFANA_ADMIN_USER"
+fi
+if [ -z "$GRAFANA_ADMIN_PASSWORD" ]; then
+    export GRAFANA_ADMIN_PASSWORD="admin"
+    echo "GRAFANA_ADMIN_PASSWORD is not set in .env file. Using user: admin"
+else
+    echo "Using GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD"
+fi
+
 # Generate files from templates
 envsubst '${USER_ID},${GROUP_ID}' < docker/templates/Dockerfile.tmpl > docker/Dockerfile
-envsubst '${USER_ID},${GROUP_ID},${NODE_HOME}' < docker/templates/docker-compose.yaml.tmpl > docker/docker-compose.yaml
+envsubst '${USER_ID},${GROUP_ID},${NODE_HOME},${GRAFANA_ADMIN_USER},${GRAFANA_ADMIN_PASSWORD}' < docker/templates/docker-compose.yaml.tmpl > docker/docker-compose.yaml
 envsubst < prometheus/prometheus.yml.tmpl > prometheus/prometheus.yml
 
 echo "Dockerfile, docker-compose.yaml and prometheus.yml have been generated successfully."
