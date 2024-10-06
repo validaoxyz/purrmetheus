@@ -11,9 +11,11 @@ services:
     environment:
       - HOSTNAME=hl_exporter
       - NODE_HOME=/node_home/
+      - BINARY_HOME=/binary_home/
     volumes:
       - ./:/app
       - ${NODE_HOME}:/node_home/
+      - ${BINARY_HOME}:/binary_home/
     restart: unless-stopped
 
   prometheus:

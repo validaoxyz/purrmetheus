@@ -18,13 +18,22 @@ export GROUP_ID=$(id -g)
 
 echo "Using USER_ID=$USER_ID and GROUP_ID=$GROUP_ID"
 
-# Use $HOME if NODE_HOME is unset or empty
 if [ -z "$NODE_HOME" ]; then
     export NODE_HOME="${HOME}/hl"
     echo "NODE_HOME is not set in .env file. Using HOME directory: ${NODE_HOME}/hl"
 else
     echo "Using NODE_HOME=$NODE_HOME"
 fi
+
+if [ -z "$NODE_BINARY" ]; then
+    export NODE_BINARY="${HOME}/hl-visor"
+    echo "NODE_BINARY is not set in .env file. Using default path: ${HOME}/hl-visor"
+else
+    echo "Using NODE_BINARY=$NODE_BINARY"
+fi
+
+export BINARY_HOME=$(dirname "$NODE_BINARY")
+
 
 if [ -z "$GRAFANA_ADMIN_USER" ]; then
     export GRAFANA_ADMIN_USER="admin"
