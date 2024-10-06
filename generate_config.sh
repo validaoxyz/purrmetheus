@@ -20,8 +20,8 @@ echo "Using USER_ID=$USER_ID and GROUP_ID=$GROUP_ID"
 
 # Use $HOME if NODE_HOME is unset or empty
 if [ -z "$NODE_HOME" ]; then
-    export NODE_HOME="$HOME"
-    echo "NODE_HOME is not set in .env file. Using HOME directory: $NODE_HOME"
+    export NODE_HOME="${HOME}/hl"
+    echo "NODE_HOME is not set in .env file. Using HOME directory: ${NODE_HOME}/hl"
 else
     echo "Using NODE_HOME=$NODE_HOME"
 fi
