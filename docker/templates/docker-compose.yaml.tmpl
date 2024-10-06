@@ -1,9 +1,8 @@
-version: '3.8'
 services:
   hl_exporter:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       args:
         USER_ID: ${USER_ID}
         GROUP_ID: ${GROUP_ID}
