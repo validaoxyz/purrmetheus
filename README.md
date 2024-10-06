@@ -87,11 +87,10 @@ docker-compose up -d
 ```
 
 ### 4. **Access the services**:
-
-   Grafana will be available on port `3000`.
-   To access your dashboard:
-     - Ensure your firewall allows port `3000`
-     - Visit `http://<your-ip>:3000` and log in using credentials from your `.env` file.
+Grafana will be available on port `3000`.
+To access your dashboard:
+  - Ensure your firewall allows port `3000`
+  - Visit `http://<your-ip>:3000` and log in using credentials from your `.env` file.
 
 
 ## Configuration
