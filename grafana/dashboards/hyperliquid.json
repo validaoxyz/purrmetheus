@@ -1,4 +1,59 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.3.0-76761.patch01-77040"
+    },
+    {
+      "type": "panel",
+      "id": "heatmap",
+      "name": "Heatmap",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "Text",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -20,7 +75,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 12,
+  "id": null,
   "links": [],
   "panels": [
     {
@@ -39,7 +94,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -109,7 +164,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "hl_block_height",
@@ -126,7 +181,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -196,7 +251,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "hl_latest_block_time * 1000",
@@ -213,7 +268,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -269,7 +324,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -310,10 +365,6 @@
       "type": "row"
     },
     {
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
       "gridPos": {
         "h": 5,
         "w": 12,
@@ -335,7 +386,10 @@
       "type": "text"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -402,7 +456,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "hl_software_up_to_date",
           "format": "time_series",
@@ -429,7 +486,10 @@
       "type": "row"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -500,7 +560,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "exemplar": false,
           "expr": "validator_jailed_status",
@@ -530,7 +593,10 @@
       "type": "table"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -581,7 +647,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "sum(validator_jailed_status)",
           "format": "time_series",
@@ -597,7 +666,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
@@ -652,7 +721,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -671,7 +740,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "1 = jailed\n0 = not jailed",
       "fieldConfig": {
@@ -779,7 +848,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "validator_jailed_status",
@@ -794,7 +863,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -873,7 +945,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "rate(proposer_count_total[15m])",
           "format": "time_series",
@@ -887,7 +962,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -966,7 +1044,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "sum by (proposer) (increase(proposer_count_total[4h]))\n/\nscalar(sum(increase(proposer_count_total[4h])))\n* 100\n",
           "format": "time_series",
@@ -993,7 +1074,10 @@
       "type": "row"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1072,7 +1156,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "hl_block_height",
           "format": "time_series",
@@ -1085,7 +1172,10 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1164,7 +1254,10 @@
       "pluginVersion": "11.3.0-76761.patch01-77040",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "disableTextWrap": false,
           "editorMode": "code",
           "expr": "300 / delta(hl_block_height[5m])",
@@ -1176,7 +1269,10 @@
           "useBackend": false
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "900 / delta(hl_block_height[15m])",
           "hide": false,
@@ -1186,7 +1282,10 @@
           "refId": "B"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "3600 / delta(hl_block_height[1h])",
           "hide": false,
@@ -1196,7 +1295,10 @@
           "refId": "C"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "14400 / delta(hl_block_height[4h])",
           "hide": false,
@@ -1206,7 +1308,10 @@
           "refId": "D"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "43200 / delta(hl_block_height[12h])",
           "hide": false,
@@ -1216,7 +1321,10 @@
           "refId": "E"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "editorMode": "code",
           "expr": "86400 / delta(hl_block_height[24h])",
           "hide": false,
@@ -1232,7 +1340,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1310,7 +1418,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -1329,7 +1437,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ddy1hq0jbnbb4a"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1411,7 +1519,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -1426,7 +1534,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(hl_apply_duration_seconds_bucket[15m])) by (le))",
@@ -1439,7 +1547,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(hl_apply_duration_seconds_bucket[1h])) by (le))",
@@ -1452,7 +1560,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(hl_apply_duration_seconds_bucket[4h])) by (le))",
@@ -1465,7 +1573,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(hl_apply_duration_seconds_bucket[12h])) by (le))",
@@ -1478,7 +1586,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ddy1hq0jbnbb4a"
+            "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(hl_apply_duration_seconds_bucket[24h])) by (le))",
@@ -1493,17 +1601,13 @@
       "type": "timeseries"
     }
   ],
-  "preload": false,
   "refresh": "",
   "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "Prometheus",
-          "value": "ddy1hq0jbnbb4a"
-        },
+        "current": {},
         "hide": 2,
         "includeAll": false,
         "label": "datasource",
@@ -1523,7 +1627,7 @@
   "timepicker": {},
   "timezone": "utc",
   "title": "Hyperliquid Testnet",
-  "uid": "",
+  "uid": "e149ac6b-f518-406d-a112-bd57460b02e5",
   "version": 34,
   "weekStart": ""
 }
