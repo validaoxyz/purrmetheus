@@ -50,7 +50,7 @@ fi
 
 # Generate files from templates
 envsubst '${USER_ID},${GROUP_ID}' < docker/templates/Dockerfile.tmpl > docker/Dockerfile
-envsubst '${USER_ID},${GROUP_ID},${NODE_HOME},${GRAFANA_ADMIN_USER},${GRAFANA_ADMIN_PASSWORD}' < docker/templates/docker-compose.yaml.tmpl > docker/docker-compose.yaml
+envsubst '${USER_ID},${GROUP_ID},${NODE_HOME},${BINARY_HOME},${NODE_BINARY},${GRAFANA_ADMIN_USER},${GRAFANA_ADMIN_PASSWORD}' < docker/templates/docker-compose.yaml.tmpl > docker/docker-compose.yaml
 envsubst < prometheus/prometheus.yml.tmpl > prometheus/prometheus.yml
 
 echo "Dockerfile, docker-compose.yaml and prometheus.yml have been generated successfully."
