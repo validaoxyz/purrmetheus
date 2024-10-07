@@ -9,12 +9,11 @@ services:
     container_name: hl_exporter
     environment:
       - HOSTNAME=hl_exporter
-      - NODE_HOME=/node_home/
-      - BINARY_HOME=/binary_home/
+      - NODE_HOME=/home/hluser/hl
+      - BINARY_HOME=/home/hluser
     volumes:
       - ./:/app
-      - ${NODE_HOME}:/node_home/
-      - ${BINARY_HOME}:/binary_home/
+${VOLUME_MOUNTS}
     restart: unless-stopped
 
   prometheus:
@@ -57,3 +56,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+${EXTRA_VOLUMES}
