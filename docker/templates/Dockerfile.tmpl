@@ -25,8 +25,8 @@ USER ubuntu
 # Set working directory
 WORKDIR /app
 
-# Copy .env file from local directory into the container
-COPY --chown=ubuntu:ubuntu .env /app/.env
+# Rely on bind mount in docker-compose.yml instead
+# COPY --chown=ubuntu:ubuntu .env /app/.env
 
 # Command to run the binary
 CMD ["/usr/local/bin/hl_exporter", "start"]
