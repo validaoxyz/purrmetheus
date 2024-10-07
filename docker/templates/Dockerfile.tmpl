@@ -26,7 +26,7 @@ USER ubuntu
 WORKDIR /app
 
 # Copy .env file from local directory into the container
-COPY --chown=ubuntu:ubuntu ../.env /app/.env
+COPY --chown=ubuntu:ubuntu ./.env /app/.env
 
 # Command to run the binary
 CMD ["/usr/local/bin/hl_exporter", "start"]
