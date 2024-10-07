@@ -73,10 +73,11 @@ cd purrmetheus
 
 ### 2. **Set up environment variables:**
 
-Copy `.env.sample` to `.env` and fill in the required values
+Copy `.env.sample` to `.env` and fill in the values
 
 ```bash
 cp .env.sample .env
+nano .env
 ```
 
 ### 3. Generate required files + build and start the containers
