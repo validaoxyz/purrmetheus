@@ -82,7 +82,7 @@ nano .env
 
 ### 3. Generate required files + build and start the containers
 ```bash
-bash generate-config.sh
+bash generate_config.sh
 cd docker
 docker-compose up -d
 ```
