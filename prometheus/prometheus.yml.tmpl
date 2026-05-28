@@ -1,14 +1,31 @@
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    chain: '${CHAIN}'
+    node: '${NODE_LABEL}'
+
+rule_files:
+  - /etc/prometheus/alerts.yml
 
 scrape_configs:
   - job_name: 'hyperliquid'
     static_configs:
       - targets:
-        - 'hl_exporter:8086'
-
+          - 'hl_exporter:8086'
+        labels:
+          chain: '${CHAIN}'
+          node: '${NODE_LABEL}'
 
   - job_name: 'node_exporter'
     static_configs:
       - targets:
-        - 'node_exporter:9100'
+          - 'node_exporter:9100'
+        labels:
+          chain: '${CHAIN}'
+          node: '${NODE_LABEL}'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - 'localhost:9090'

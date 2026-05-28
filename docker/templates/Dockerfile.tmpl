@@ -1,32 +1,53 @@
-FROM debian:sid-slim
+FROM debian:bookworm-slim
 
-# Set build-time variables for UID and GID
 ARG USER_ID=${USER_ID}
 ARG GROUP_ID=${GROUP_ID}
+ARG EXPORTER_VERSION=${EXPORTER_VERSION}
+ARG TARGETARCH=amd64
 
-# Install necessary dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl jq ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+        curl \
+        ca-certificates \
+        jq \
+        tini \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create a group and user with the host IDs so we can execute binary to extract version info
-RUN groupadd -g ${GROUP_ID} ubuntu && \
-    useradd -u ${USER_ID} -g ubuntu -m ubuntu
+RUN getent group ${GROUP_ID} >/dev/null \
+        || groupadd -g ${GROUP_ID} hluser; \
+    getent passwd ${USER_ID} >/dev/null \
+        || useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /usr/sbin/nologin hluser
 
-# **Install the hl_exporter binary as root user**
-RUN curl -sSL $(curl -s https://api.github.com/repos/validaoxyz/hyperliquid-exporter/releases/latest \
-    | jq -r '.assets[] | select(.name | contains("linux_amd64") and (endswith(".tar.gz") | not)) | .browser_download_url') \
-    -o /usr/local/bin/hl_exporter && \
-    chmod +x /usr/local/bin/hl_exporter
+RUN set -eux; \
+    case "${TARGETARCH}" in \
+        amd64) ARCH=amd64 ;; \
+        arm64) ARCH=arm64 ;; \
+        *) echo "Unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    if [ -z "${EXPORTER_VERSION}" ] || [ "${EXPORTER_VERSION}" = "latest" ]; then \
+        URL=$(curl -fsSL https://api.github.com/repos/validaoxyz/hyperliquid-exporter/releases/latest \
+            | jq -r --arg arch "$ARCH" \
+                '.assets[] | select(.name == ("hl_exporter_linux_" + $arch)) | .browser_download_url'); \
+    else \
+        URL="https://github.com/validaoxyz/hyperliquid-exporter/releases/download/${EXPORTER_VERSION}/hl_exporter_linux_${ARCH}"; \
+    fi; \
+    if [ -z "${URL}" ]; then echo "Could not resolve hl_exporter download URL" >&2; exit 1; fi; \
+    echo "Downloading hl_exporter from ${URL}"; \
+    curl -fsSL "${URL}" -o /usr/local/bin/hl_exporter; \
+    chmod 0755 /usr/local/bin/hl_exporter; \
+    /usr/local/bin/hl_exporter version || true
 
-# Switch to the new user
-USER ubuntu
-
-# Set working directory
+USER hluser
 WORKDIR /app
 
-# Rely on bind mount in docker-compose.yml instead
-# COPY --chown=ubuntu:ubuntu .env /app/.env
+ENV NODE_HOME=/home/hluser/hl \
+    BINARY_HOME=/home/hluser/bin
 
-# Command to run the binary
-CMD ["/usr/local/bin/hl_exporter", "start"]
+EXPOSE 8086
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8086/livez || exit 1
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/hl_exporter"]
+CMD ["start"]

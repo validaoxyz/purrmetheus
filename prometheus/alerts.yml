@@ -1,0 +1,181 @@
+groups:
+  - name: hyperliquid_node_health
+    interval: 30s
+    rules:
+      - alert: HyperliquidExporterDown
+        expr: up{job="hyperliquid"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "hyperliquid-exporter is unreachable"
+          description: "Scrape of hl_exporter:8086 has been failing for over 1m."
+
+      - alert: HLNodeProcessDown
+        expr: hl_node_process_up{process="hl-node"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "hl-node process is not running"
+          description: "Process hl-node is absent from /proc on {{ $labels.instance }}."
+
+      - alert: HLVisorProcessDown
+        expr: hl_node_process_up{process="hl-visor"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "hl-visor process is not running"
+          description: "Process hl-visor is absent from /proc on {{ $labels.instance }}."
+
+      - alert: NodeNotInSync
+        expr: hl_visor_last_observation_age_seconds > 60
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Visor observation stale"
+          description: "No visor sample for {{ $value }}s — node is falling behind."
+
+      - alert: ConsensusAheadOfWallClock
+        expr: abs(hl_visor_consensus_ahead_of_wall_seconds) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Consensus drift from wall clock"
+          description: "consensus_time - wall_clock = {{ $value }}s; investigate clock or sync."
+
+      - alert: SnapshotPipelineStalled
+        expr: hl_node_snapshot_last_age_seconds > 900
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ABCI snapshot pipeline stalled"
+          description: "Last snapshot was {{ $value }}s ago."
+
+      - alert: DiskFillingUp
+        expr: (hl_node_disk_free_bytes / hl_node_disk_total_bytes) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Less than 10% disk free on NODE_HOME filesystem"
+          description: "{{ humanize $value }} of disk free."
+
+      - alert: DiskFillingUpWarning
+        expr: (hl_node_disk_free_bytes / hl_node_disk_total_bytes) < 0.20
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Less than 20% disk free on NODE_HOME filesystem"
+
+      - alert: BugEmitted
+        expr: hl_node_bugs > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "hl-node logged bug!"
+          description: "hl_node_bugs reports {{ $value }} bug events on source {{ $labels.source }}."
+
+      - alert: CritsAccumulating
+        expr: rate(hl_node_crits[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "hl-node crit! rate is non-zero"
+          description: "Crit rate on source {{ $labels.source }}: {{ $value }}/s over 5m."
+
+  - name: hyperliquid_p2p
+    interval: 30s
+    rules:
+      - alert: MaxPeersReached
+        expr: rate(hl_p2p_gossip_events_total{event_type="rejecting_gossip_stream_max_peers_reached"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rejecting gossip streams due to max peers"
+          description: "Node is at the peer cap and rejecting new streams."
+
+      - alert: PeerFanoutCollapsed
+        expr: hl_p2p_unique_peers_seen{window="24h"} < 50
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unique peers seen in 24h dropped below 50"
+
+      - alert: LivePeerCountLow
+        expr: hl_p2p_tcp_connections{port="4001",state="ESTABLISHED"} < 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Less than 3 established peers on gossip port 4001"
+
+  - name: hyperliquid_consensus
+    interval: 30s
+    rules:
+      - alert: BlockApplySlow
+        expr: hl_node_subsystem_latency_p95_seconds{subsystem="node_fast_begin_block_to_commit"} > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 begin_block→commit latency > 100ms"
+          description: "Current p95: {{ humanizeDuration $value }}."
+
+      - alert: BlockHeightStalled
+        expr: rate(hl_core_block_height[5m]) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Block height not advancing"
+          description: "hl_core_block_height has not changed for 2 minutes."
+
+  - name: hyperliquid_evm
+    interval: 30s
+    rules:
+      - alert: EVMTierDivergence
+        expr: hl_evm_db_checkpoint_lag_blocks > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "EVM fast/slow checkpoint lag > 100 blocks"
+          description: "Lag: {{ $value }} blocks for 10m."
+
+  - name: hyperliquid_exporter
+    interval: 30s
+    rules:
+      - alert: ExporterMonitorStuck
+        expr: |
+          (time() - hl_exporter_monitor_last_tick_seconds) > 600
+          and on(monitor) hl_exporter_monitor_last_tick_seconds > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exporter monitor {{ $labels.monitor }} has not ticked in >10m"
+
+      - alert: ExporterPanicking
+        expr: rate(hl_exporter_monitor_panics_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exporter monitor {{ $labels.monitor }} is panicking"
+
+      - alert: SoftwareOutdated
+        expr: hl_software_up_to_date == 0
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "Local hl-node binary is out of date"
