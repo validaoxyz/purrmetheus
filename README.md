@@ -51,7 +51,7 @@ process — the exporter tails local logs and walks `NODE_HOME`.
 
 Components:
 
-- **hyperliquid-exporter v3** — multi-arch (`amd64`/`arm64`) container
+- **hyperliquid-exporter v3** — the metrics source
 - **Prometheus** — on-disk retention, alert evaluation, rules for liveness, sync, disk, crits, peers, EVM lag and exporter health
 - **Grafana** — auto-provisioned v3 dashboard (HyperCore, consensus/validators, visor sync, HyperEVM, node health, P2P, latency)
 - **node_exporter** — host `/proc`, `/sys` and `/` mounted for host metrics
@@ -174,23 +174,6 @@ To route them, add an Alertmanager service to the compose file and point Prometh
 └── docs/
     └── metrics/                      # local metric reference
 ```
-
-## Troubleshooting
-
-**Grafana panels show "No data"** — check Prometheus can reach the exporter:
-```bash
-docker compose -f docker/docker-compose.yaml exec prometheus \
-    wget -qO- http://hl_exporter:8086/metrics | head
-```
-
-**`hl_node_process_up` is 0** — the exporter reads `/proc` to find `hl-node`/`hl-visor`. Linux-only;
-absent on macOS Docker Desktop.
-
-**Binary version check fails on build** — the exporter binary downloads from GitHub at build time.
-Behind a proxy or rate-limited, pin `EXPORTER_VERSION` and rebuild.
-
-**Permission errors on `prometheus_data`/`grafana_data`** — containers run as your host UID/GID (set by
-`generate_config.sh`). If you ran an older version first, remove the named volumes once and let them recreate.
 
 ## Docs
 
