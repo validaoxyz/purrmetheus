@@ -44,31 +44,24 @@
                                                                      `~\  |
 ```
 
-A one-command monitoring stack for **Hyperliquid** nodes, built on Prometheus, Grafana and
-[validaoxyz/hyperliquid-exporter](https://github.com/validaoxyz/hyperliquid-exporter).
+One-command monitoring stack for [Hyperliquid](https://hyperliquid.xyz) nodes: Prometheus, Grafana,
+and [hyperliquid-exporter](https://github.com/validaoxyz/hyperliquid-exporter) v3, wired together
+with a provisioned dashboard and alert rules. Run it on the same host as your `hl-visor`/`hl-node`
+process — the exporter tails local logs and walks `NODE_HOME`.
 
-## What you get
+Components:
 
-- **hyperliquid-exporter v3** in a hardened, multi-arch (`amd64`/`arm64`) container.
-- **Prometheus** with sensible defaults, on-disk retention, alert evaluation, and a curated
-  rule set covering process liveness, sync, disk, crits, peers, EVM checkpoint lag and
-  exporter health.
-- **Grafana** with an auto-provisioned dashboard covering the v3 metric families:
-  HyperCore block production, consensus / validators, validator-only panels, visor sync,
-  HyperEVM, node health (process, disk, crits, snapshots), P2P traffic and subsystem
-  latency.
-- **node_exporter** with host `/proc`, `/sys` and `/` properly mounted for accurate host
-  metrics.
+- **hyperliquid-exporter v3** — multi-arch (`amd64`/`arm64`) container
+- **Prometheus** — on-disk retention, alert evaluation, rules for liveness, sync, disk, crits, peers, EVM lag and exporter health
+- **Grafana** — auto-provisioned v3 dashboard (HyperCore, consensus/validators, visor sync, HyperEVM, node health, P2P, latency)
+- **node_exporter** — host `/proc`, `/sys` and `/` mounted for host metrics
 
 ## Requirements
 
 - Docker Engine ≥ 24 with the Compose plugin
 - `envsubst` (`apt install gettext-base` / `brew install gettext`)
 - `jq` (`apt install jq` / `brew install jq`)
-- A running Hyperliquid node on the same host (the exporter scrapes its log files)
-
-This stack is meant to run on the **same machine** as your `hl-visor`/`hl-node` process —
-hyperliquid-exporter relies on tailing local logs and walking `NODE_HOME`.
+- A Hyperliquid node running on the same host
 
 ## Quick start
 
@@ -79,21 +72,18 @@ cd purrmetheus
 cp .env.sample .env
 $EDITOR .env                      # set NODE_HOME, CHAIN, EXPORTER_VERSION, …
 
-bash generate_config.sh           # renders docker/Dockerfile, docker-compose.yaml,
-                                  # prometheus/prometheus.yml from templates
+bash generate_config.sh           # renders Dockerfile, compose and prometheus.yml from templates
 
 cd docker
 docker compose up -d --build
 ```
 
-Grafana is then reachable on `http://<host>:${GRAFANA_PORT:-3000}` (login with the
-admin credentials from your `.env`; you'll be prompted to rotate on first login).
-The Hyperliquid dashboard is auto-provisioned — look for it under **Dashboards →
-Hyperliquid**.
+Grafana: `http://<host>:${GRAFANA_PORT:-3000}`, admin credentials from `.env` (rotate on first login).
+The dashboard is under **Dashboards → Hyperliquid**.
 
 ## Configuration
 
-All knobs live in `.env`.
+All settings live in `.env`.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -104,17 +94,16 @@ All knobs live in `.env`.
 | `VALIDATOR_ADDRESS` | – | Your validator address |
 | `CHAIN` | `mainnet` | `mainnet` or `testnet`. Tags every series as `chain=…` |
 | `NODE_LABEL` | `hl-node` | Free-form label tagged onto every series as `node=…` |
-| `EXPORTER_VERSION` | `v3.0.0` | Release tag of `hyperliquid-exporter` to install; `latest` is allowed |
+| `EXPORTER_VERSION` | `v3.0.0` | Release tag of `hyperliquid-exporter` to install; `latest` allowed |
 | `EXPORTER_EXTRA_FLAGS` | `--replica-metrics --evm-metrics` | Extra flags forwarded to `hl_exporter start` |
 | `GRAFANA_ADMIN_USER` | `admin` | Initial Grafana login |
 | `GRAFANA_ADMIN_PASSWORD` | `admin` | Initial Grafana password |
 | `GRAFANA_PORT` | `3000` | Host port for the Grafana UI |
 | `PROMETHEUS_RETENTION` | `30d` | Prometheus TSDB retention window |
 
-### Exporter flags worth knowing
+### Exporter flags
 
-`hl_exporter` exposes the v3 default metric set on `:8086/metrics` out of the box. The
-flags below unlock extra families; set them via `EXPORTER_EXTRA_FLAGS`:
+`hl_exporter` serves the v3 default metric set on `:8086/metrics`. Add families via `EXPORTER_EXTRA_FLAGS`:
 
 | Flag | Adds |
 | --- | --- |
@@ -123,9 +112,9 @@ flags below unlock extra families; set them via `EXPORTER_EXTRA_FLAGS`:
 | `--contract-metrics` | Per-contract tx tracking (cardinality-bounded) |
 | `--extended-metrics` | RocksDB, lz4, tokio, public IP, log lines, crit locations, … |
 | `--probe-info-endpoint` | Active probe of the node's `--serve-info` endpoint |
-| `--per-peer-metrics` | Emits per-IP `hl_p2p_peer_{first,last}_seen_seconds` (LRU-bounded) |
+| `--per-peer-metrics` | Per-IP `hl_p2p_peer_{first,last}_seen_seconds` (LRU-bounded) |
 
-A useful baseline for a validator running with `--serve-info`:
+Validator baseline with `--serve-info`:
 
 ```env
 EXPORTER_EXTRA_FLAGS="--replica-metrics --evm-metrics --probe-info-endpoint --extended-metrics"
@@ -135,7 +124,7 @@ EXPORTER_EXTRA_FLAGS="--replica-metrics --evm-metrics --probe-info-endpoint --ex
 
 ```bash
 git pull
-$EDITOR .env                      # bump EXPORTER_VERSION if you want to pin newer
+$EDITOR .env                      # bump EXPORTER_VERSION to pin a newer release
 bash generate_config.sh
 cd docker
 docker compose up -d --build
@@ -143,24 +132,21 @@ docker compose up -d --build
 
 ## Upgrading from v1.x
 
-v1.x of this repo wrapped `hyperliquid-exporter` v1.x, whose metrics were a flat
-`hl_*` namespace. Starting with v2.0 of the exporter (Aug 2025), every metric got a
-category prefix (`hl_core_*`, `hl_consensus_*`, `hl_metal_*`, `hl_evm_*`). v3 of the
-exporter (May 2026) added ~80 more metrics without breaking the v2 surface. **The v1
-dashboard shipped with purrmetheus v1.0.0 will render blank against the current
-exporter** — that's why this v2 release ships a from-scratch dashboard.
+purrmetheus v1.x wrapped exporter v1.x, which used a flat `hl_*` namespace. Exporter v2.0 (Aug 2025)
+added category prefixes (`hl_core_*`, `hl_consensus_*`, `hl_metal_*`, `hl_evm_*`); v3 (May 2026) added
+~80 metrics on top without breaking v2. The v1 dashboard renders blank against the current exporter,
+so v2 ships a new one.
 
-If you have customizations on top of the v1 dashboard, see
-[hyperliquid-exporter's CHANGELOG](https://github.com/validaoxyz/hyperliquid-exporter/blob/main/CHANGELOG.md)
-for the full rename table.
+For the full rename table, see the
+[exporter CHANGELOG](https://github.com/validaoxyz/hyperliquid-exporter/blob/main/CHANGELOG.md).
 
 ## Alerts
 
-The `prometheus/alerts.yml` rule file is loaded by Prometheus on start. Rules cover:
+Prometheus loads `prometheus/alerts.yml` on start. Rules cover:
 
-- Process liveness (`hl-node`, `hl-visor`, the exporter itself)
+- Process liveness (`hl-node`, `hl-visor`, exporter)
 - Sync health (visor observation age, consensus-vs-wall drift, snapshot pipeline)
-- Disk usage (warn at 20%, critical at 10%)
+- Disk usage (warn 20%, critical 10%)
 - Bug/crit emission
 - P2P health (max-peers, peer fanout, gossip-port liveness)
 - EVM tier divergence
@@ -168,14 +154,14 @@ The `prometheus/alerts.yml` rule file is loaded by Prometheus on start. Rules co
 - Exporter monitor stuck / panicking
 - Software outdated
 
-To route them to Slack/PagerDuty/etc., add an Alertmanager service to your compose
-file and point Prometheus at it via `--alertmanager.url`.
+To route them, add an Alertmanager service to the compose file and point Prometheus at it via
+`--alertmanager.url`.
 
 ## Layout
 
 ```
 .
-├── .env.sample                       # all user-tweakable settings
+├── .env.sample                       # user settings
 ├── generate_config.sh                # renders templates into runnable configs
 ├── docker/
 │   └── templates/                    # Dockerfile + compose templates (envsubst input)
@@ -186,33 +172,30 @@ file and point Prometheus at it via `--alertmanager.url`.
 │   ├── dashboards/                   # JSON dashboards, auto-loaded
 │   └── provisioning/                 # datasource + dashboard provider configs
 └── docs/
-    └── metrics/                      # local metric reference (links to upstream)
+    └── metrics/                      # local metric reference
 ```
 
 ## Troubleshooting
 
-**Grafana panels show "No data"** — confirm `hl_exporter` is reachable from Prometheus:
+**Grafana panels show "No data"** — check Prometheus can reach the exporter:
 ```bash
 docker compose -f docker/docker-compose.yaml exec prometheus \
     wget -qO- http://hl_exporter:8086/metrics | head
 ```
 
-**`hl_node_process_up` is 0** — the exporter looks at `/proc` to find `hl-node`/`hl-visor`.
-This only works on Linux hosts and requires that the exporter container can see the
-right PIDs. On macOS Docker Desktop these metrics will be absent — that's expected.
+**`hl_node_process_up` is 0** — the exporter reads `/proc` to find `hl-node`/`hl-visor`. Linux-only;
+absent on macOS Docker Desktop.
 
-**Binary version check fails on build** — the exporter binary is downloaded from
-GitHub at build time. If you're behind a corporate proxy / rate-limited, pin
-`EXPORTER_VERSION` to a specific tag and re-build.
+**Binary version check fails on build** — the exporter binary downloads from GitHub at build time.
+Behind a proxy or rate-limited, pin `EXPORTER_VERSION` and rebuild.
 
-**Permission errors on `prometheus_data` or `grafana_data`** — the containers run as
-your host UID/GID (set automatically by `generate_config.sh`). If you ran an older
-version of this stack first, remove the named volumes once and let them be recreated.
+**Permission errors on `prometheus_data`/`grafana_data`** — containers run as your host UID/GID (set by
+`generate_config.sh`). If you ran an older version first, remove the named volumes once and let them recreate.
 
 ## Docs
 
 - [Local metrics quick-reference](docs/metrics/README.md)
-- [Full exporter metrics reference (upstream)](https://github.com/validaoxyz/hyperliquid-exporter/blob/main/docs/metrics.md)
+- [Full exporter metrics reference](https://github.com/validaoxyz/hyperliquid-exporter/blob/main/docs/metrics.md)
 - [Exporter v2→v3 upgrade notes](https://github.com/validaoxyz/hyperliquid-exporter/blob/main/UPGRADING.md)
 - [Exporter changelog](https://github.com/validaoxyz/hyperliquid-exporter/blob/main/CHANGELOG.md)
 
