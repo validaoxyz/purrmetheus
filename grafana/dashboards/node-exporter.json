@@ -100,7 +100,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -114,7 +114,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -1106,7 +1106,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -1120,7 +1120,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -2500,7 +2500,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -4586,7 +4586,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -4598,7 +4598,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -10471,7 +10471,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -10483,7 +10483,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -11541,7 +11541,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -11553,7 +11553,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -12067,7 +12067,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -12079,7 +12079,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -12972,7 +12972,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -12984,7 +12984,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -14261,7 +14261,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -14273,7 +14273,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -14724,7 +14724,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -14736,7 +14736,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -15084,7 +15084,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -15096,7 +15096,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -18456,7 +18456,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -18468,7 +18468,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -19070,7 +19070,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -19082,7 +19082,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -21132,7 +21132,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -21144,7 +21144,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -21795,7 +21795,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -21807,7 +21807,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -23478,7 +23478,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
@@ -23490,7 +23490,7 @@
       "collapsed": true,
       "datasource": {
         "type": "prometheus",
-        "uid": "000000001"
+        "uid": "${datasource}"
       },
       "gridPos": {
         "h": 1,
@@ -23750,7 +23750,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "000000001"
+            "uid": "${datasource}"
           },
           "refId": "A"
         }
