@@ -2,8 +2,8 @@
 
 Purrmetheus packages the metrics exposed by `hyperliquid-exporter` v4.0.7.
 The upstream [metrics reference](https://github.com/validaoxyz/hyperliquid-exporter/blob/v4.0.7/docs/metrics.md)
-is the authoritative inventory and interpretation guide. Optional families are
-absent unless their exporter flag is enabled.
+is the authoritative inventory and interpretation guide. Optional metric
+families are absent unless their exporter flag is enabled.
 
 The `hyperliquid` scrape target receives static `chain`, `node`, and `node_mode`
 labels (`host` or `docker`). Prometheus also configures `chain` and `node` as
@@ -91,8 +91,8 @@ The following type rules matter when writing dashboards or alerts:
 
 The persisted checkpoint-gap family is always-on and does not require
 `--evm-metrics`; the dashboard labels that panel explicitly. In Dockerized-node
-mode the default data-only volume does not include root-level node state, so
-that family and other root-level sources can remain unavailable. Process and
+mode, the default data-only volume excludes root-level node state, so that
+family and other root-level sources can remain unavailable. Process and
 filesystem-capacity alerts are suppressed for `node_mode="docker"` because its
 bridge/PID namespaces cannot prove host-node liveness or `NODE_HOME` capacity.
 
@@ -113,5 +113,5 @@ names, `deriv()` for Core height, and explicit guards for optional monitors.
 Review thresholds and `for` durations before routing alerts to an incident
 system.
 
-The bundled file already contains the upstream-compatible rules. Mounting the
-upstream alert files in addition to it will create duplicate alerts.
+The bundled file already contains the upstream-compatible rules. Mounting
+upstream alert files alongside it will create duplicate alerts.
