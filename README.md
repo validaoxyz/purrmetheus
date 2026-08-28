@@ -73,12 +73,19 @@ newer) and must place the node and exporter in the same Linux VM. Host mode
 requires an existing `NODE_HOME` directory and executable `NODE_BINARY`; config
 generation fails early when either path is unavailable.
 
+The exporter listener uses a wildcard `:8086` bind in host-node mode. Restrict
+that port with the host firewall to the Prometheus bridge or trusted monitoring
+network. The Grafana mapping and sample credentials are for first-run setup;
+bind or firewall the UI for your deployment and rotate `GRAFANA_ADMIN_PASSWORD`
+before exposing it beyond the local host.
+
 The Dockerized-node profile mounts the external `hyperliquid_hl-data` volume at
 `/home/hluser/hl/data` and keeps the exporter on the Compose bridge network.
 Root-level node files and the node container's network namespace are not part
 of that reduced profile. Set `INFO_ENDPOINT_URL` to a reachable published node
 endpoint before enabling `--probe-info-endpoint`, and arrange a shared host
-directory for the optional critical-location projection.
+directory for the optional critical-location projection. The external volume
+must already exist; start the companion Hyperliquid node deployment first.
 
 ## Quick start
 
@@ -108,12 +115,16 @@ All settings live in `.env`.
 | `NODE_HOME` | `$HOME/hl` | Absolute host path to the node's data directory |
 | `NODE_BINARY` | `$HOME/hl-node` | Absolute host path to the `hl-node` binary; its directory is mounted read-only |
 | `BINARY_HOME` | resolved `NODE_BINARY` directory | Optional absolute directory containing `hl-visor`; mounted at the v4 update-check path |
+| `EXPORTER_UID` | invoking user's UID | Non-root UID for the exporter image; useful in CI (empty uses the invoking account) |
+| `EXPORTER_GID` | invoking user's GID | Non-root GID for the exporter image; useful in CI (empty uses the invoking account) |
 | `INFO_ENDPOINT_URL` | – | Optional URL for `--probe-info-endpoint`; Dockerized-node mode usually needs a published node address |
 | `CRIT_LOCATIONS_DIR` | `/tmp/crit_msg_latest_stats` | Host directory containing the matched `hl-visor.json` projection; mounted read-only at the exporter’s fixed path (empty disables the optional mount) |
 | `CHAIN` | `mainnet` | `mainnet` or `testnet`. Tags every series as `chain=…` |
 | `NODE_LABEL` | `hl-node` | Free-form label tagged onto every series as `node=…` |
 | `EXPORTER_VERSION` | `v4.0.7` | Release tag of `hyperliquid-exporter` to install; `latest` allowed |
 | `EXPORTER_EXTRA_FLAGS` | `--evm-metrics` | Extra flags forwarded to `hl_exporter start` |
+| `SKIP_VERSION_CHECK` | `false` | Host-node toggle for the local `hl-node --version` monitor |
+| `SKIP_UPDATE_CHECK` | `false` | Host-node toggle for the remote `hl-visor` update check |
 | `GRAFANA_ADMIN_USER` | `admin` | Initial Grafana login |
 | `GRAFANA_ADMIN_PASSWORD` | `admin` | Initial Grafana password |
 | `GRAFANA_PORT` | `3000` | Host port for the Grafana UI |
@@ -124,6 +135,13 @@ All settings live in `.env`.
 are rejected. Stack-owned flags such as `--chain`, `--metrics-port`, and the
 node/binary paths are configured by the variables above and cannot be
 overridden in this field.
+
+Host-node mode enables both binary checks by default. Set
+`SKIP_VERSION_CHECK=true` or `SKIP_UPDATE_CHECK=true` when local policy or
+network egress prevents one check; the corresponding source is then reported
+as disabled. The update checker needs outbound HTTPS to the Hyperliquid binary
+service, and validator summaries need the configured Hyperliquid API. The
+exporter can still serve metrics when either source is unavailable.
 
 Pin `EXPORTER_VERSION` for repeatable builds. If you choose `latest`, rebuild
 with `docker compose build --pull --no-cache` when checking for a newer release;
@@ -141,8 +159,10 @@ be used only with a node deployment that explicitly shares that directory.
 
 The generated Prometheus job name remains `hyperliquid` for existing consumers;
 its target is labeled `node_mode=host` or `node_mode=docker`.
-The bundled rules also accept the upstream `hyperliquid-exporter` job prefix.
-Host-node mode
+Generic bundled rules also accept the upstream `hyperliquid-exporter` job prefix.
+Process and disk-capacity rules intentionally require `node_mode=host`, so an
+upstream-style target must provide that label when it represents a host-node
+profile. Host-node mode
 uses `host.docker.internal:8086` as its target; Dockerized-node mode uses the
 `hl_exporter:8086` service name.
 
@@ -190,6 +210,12 @@ adds the `outcomeDeploy` and `trailingStop` action classifications. Purrmetheus
 v3.0.0 is the first release built and tested against v4.0.7. Regenerate the
 stack and review downstream dashboards, alerts, recording rules, and remote
 write consumers before switching an existing target.
+
+Before switching, stop the old v3 exporter and remove or disable its alert and
+recording rules. Then update `EXPORTER_VERSION`, replace retired flags such as
+`--evm` and `--enable-prom`, resolve `NODE_BINARY` symlinks to regular files,
+regenerate the stack, and start the new target. Keep the Compose project name
+and named volumes; do not use `docker compose down -v` during the migration.
 
 The bundled consumers already use the current v4 names. Notable migrations
 include `hl_consensus_validators`,

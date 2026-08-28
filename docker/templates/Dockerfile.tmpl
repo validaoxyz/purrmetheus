@@ -3,7 +3,10 @@ FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe6
 ARG USER_ID=${USER_ID}
 ARG GROUP_ID=${GROUP_ID}
 ARG EXPORTER_VERSION=${EXPORTER_VERSION}
-ARG TARGETARCH=amd64
+# TARGETARCH is supplied by BuildKit for the requested target platform. Do not
+# give it a default: a default would mask the automatic value during a
+# cross-platform build and could install the wrong release asset.
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -24,10 +27,10 @@ RUN set -eux; \
 # build. BuildKit commonly cross-builds linux/amd64 and linux/arm64 on one
 # host; running the target binary here would require architecture emulation.
 RUN set -eux; \
-    case "${TARGETARCH}" in \
-        amd64) ARCH=amd64 ;; \
-        arm64) ARCH=arm64 ;; \
-        *) echo "Unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
+    case "${TARGETARCH:-}" in \
+        amd64) ARCH=amd64; EXPECTED_ELF_MACHINE=3e00 ;; \
+        arm64) ARCH=arm64; EXPECTED_ELF_MACHINE=b700 ;; \
+        *) echo "Unsupported or missing target arch: ${TARGETARCH:-<empty>}" >&2; exit 1 ;; \
     esac; \
     ASSET_NAME="hl_exporter_linux_${ARCH}"; \
     case "${EXPORTER_VERSION}:${ARCH}" in \
@@ -65,6 +68,10 @@ RUN set -eux; \
     echo "Downloading hl_exporter from ${URL}"; \
     curl -fsSL --retry 3 "${URL}" -o /usr/local/bin/hl_exporter; \
     printf '%s  %s\n' "$DIGEST" /usr/local/bin/hl_exporter | sha256sum -c -; \
+    ACTUAL_ELF_MACHINE=$(od -An -tx1 -j18 -N2 /usr/local/bin/hl_exporter | tr -d '[:space:]'); \
+    [ "$ACTUAL_ELF_MACHINE" = "$EXPECTED_ELF_MACHINE" ] || { \
+        echo "Exporter ELF machine ${ACTUAL_ELF_MACHINE} does not match target ${ARCH}" >&2; exit 1; \
+    }; \
     chmod 0755 /usr/local/bin/hl_exporter; \
     test -s /usr/local/bin/hl_exporter
 

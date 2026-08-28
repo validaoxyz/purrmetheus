@@ -222,7 +222,7 @@ printf '%s\n' \
     HyperliquidValidatorAPIStaleFallback HyperliquidTmpMaterialStale | sort > "$EXPECTED_ALERTS"
 sed -n 's/^[[:space:]]*- alert: //p' prometheus/alerts.yml | sort > "$ACTUAL_ALERTS"
 cmp -s "$EXPECTED_ALERTS" "$ACTUAL_ALERTS" || fail "alert inventory differs from fixture"
-if rg -n 'hl_consensus_validator_count|hl_consensus_qc_participation_rate|hl_evm_account_count|hl_exporter_monitor_last_tick_seconds|hl_p2p_tcp_connections_total|hl_p2p_peer_history_total' prometheus/alerts.yml >/dev/null; then
+if grep -Eq 'hl_consensus_validator_count|hl_consensus_qc_participation_rate|hl_evm_account_count|hl_exporter_monitor_last_tick_seconds|hl_p2p_tcp_connections_total|hl_p2p_peer_history_total' prometheus/alerts.yml; then
     fail "obsolete metric remains in alerts"
 fi
 pass "Prometheus v4.0.7 alert rules and fixtures"
@@ -295,6 +295,8 @@ jq -e '
 ' "$HOST_COMPOSE" >/dev/null || fail "node_exporter root mount is not read-only"
 ! grep -F '/:/host/root:ro,rslave' "$HOST_CASE/docker/docker-compose.yaml" >/dev/null \
     || fail "node_exporter root mount still requires unsupported propagation"
+bind_false_count=$(grep -Ec '^          create_host_path: false$' "$HOST_CASE/docker/docker-compose.yaml" || true)
+[ "$bind_false_count" -ge 3 ] || fail "host bind mounts may create missing source paths"
 grep -F 'node_mode: '\''host'\''' "$HOST_CASE/prometheus/prometheus.yml" >/dev/null \
     || fail "host Prometheus node_mode label"
 grep -F "'host.docker.internal:8086'" "$HOST_CASE/prometheus/prometheus.yml" >/dev/null \
@@ -354,7 +356,11 @@ write_env "$DOCKER_CASE" 'USE_DOCKER=true' 'EXPORTER_EXTRA_FLAGS=--probe-info-en
 expect_generator_failure "$DOCKER_CASE" "Docker probe without URL"
 for loopback_url in \
     'http://127.0.0.1:3001/info' \
+    'http://127.1:3001/info' \
+    'http://0.0.0.0:3001/info' \
     'http://localhost:3001/info' \
+    'http://localhost.:3001/info' \
+    'http://[::ffff:127.0.0.1]:3001/info' \
     'http://[::1]:3001/info'; do
     write_env "$DOCKER_CASE" 'USE_DOCKER=true' "INFO_ENDPOINT_URL=$loopback_url" \
         'EXPORTER_EXTRA_FLAGS=--probe-info-endpoint'
@@ -369,6 +375,20 @@ HOST_EMPTY_COMPOSE=$(compose_json "$HOST_CASE") || fail "empty flags Compose nor
 jq -e '.services.hl_exporter.command == ["start", "--chain=mainnet"]' \
     "$HOST_EMPTY_COMPOSE" >/dev/null || fail "empty flags changed the exporter command"
 pass "empty and whitespace-only flags on Bash 3.2"
+
+write_env "$HOST_CASE" \
+    "NODE_HOME=$HOST_CASE/node" "NODE_BINARY=$HOST_CASE/bin/hl-node" \
+    'SKIP_VERSION_CHECK=true' 'SKIP_UPDATE_CHECK=true' 'EXPORTER_EXTRA_FLAGS='
+run_generator "$HOST_CASE" || fail "host skip-check toggles"
+HOST_SKIP_COMPOSE=$(compose_json "$HOST_CASE") || fail "host skip-check Compose normalization"
+jq -e '.services.hl_exporter.command == ["start", "--chain=mainnet", "--skip-version-check", "--skip-update-check"]' \
+    "$HOST_SKIP_COMPOSE" >/dev/null || fail "host skip-check toggles were not rendered"
+pass "host binary-check toggles are rendered independently"
+
+write_env "$HOST_CASE" \
+    "NODE_HOME=$HOST_CASE/node" "NODE_BINARY=$HOST_CASE/bin/hl-node" \
+    'SKIP_VERSION_CHECK=maybe'
+expect_generator_failure "$HOST_CASE" "invalid skip-check boolean"
 
 write_env "$HOST_CASE" \
     "NODE_HOME=$HOST_CASE/node" "NODE_BINARY=$HOST_CASE/bin/hl-node" \
@@ -430,6 +450,9 @@ expect_generator_failure "$HOST_CASE" "symlinked NODE_BINARY"
 write_env "$HOST_CASE" "NODE_HOME=$HOST_CASE/node" "NODE_BINARY=$HOST_CASE/bin/hl-node" \
     $'GRAFANA_ADMIN_PASSWORD="line\nbreak"'
 expect_generator_failure "$HOST_CASE" "multiline Grafana password"
+write_env "$HOST_CASE" "NODE_HOME=$HOST_CASE/node" "NODE_BINARY=$HOST_CASE/bin/hl-node" \
+    'EXPORTER_UID=0'
+expect_generator_failure "$HOST_CASE" "root exporter UID"
 write_env "$HOST_CASE" "NODE_HOME=$HOST_CASE/node" "NODE_BINARY=$HOST_CASE/bin/hl-node" \
     'EXPORTER_EXTRA_FLAGS=--probe-info-endpoint=yes'
 expect_generator_failure "$HOST_CASE" "invalid boolean flag"
@@ -543,6 +566,7 @@ else
     pass "downloaded upstream $release_version source archive ($upstream_commit)"
 fi
 [ -f "$upstream_tree/go.mod" ] || fail "upstream source archive is missing go.mod"
+command -v go >/dev/null 2>&1 || fail "missing command: go (required by --full upstream checks)"
 upstream_log="$TMP_ROOT/upstream-tests.log"
 if ! (cd "$upstream_tree" && GOTOOLCHAIN=auto go test ./... >"$upstream_log" 2>&1); then
     tail -80 "$upstream_log" >&2
@@ -580,14 +604,31 @@ if [ "$docker_available" != true ]; then
     fi
     skip "Docker daemon unavailable; image/runtime smoke was not run"
 else
-    image_tag="purrmetheus-validation:$$"
+    image_tag_base="purrmetheus-validation:$$"
     platform_name=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/; s/arm64/arm64/')
-    docker build --pull --platform "linux/$platform_name" \
-        --build-arg "USER_ID=$(id -u)" --build-arg "GROUP_ID=$(id -g)" \
-        --build-arg "EXPORTER_VERSION=$release_version" \
-        -f "$HOST_CASE/docker/Dockerfile" -t "$image_tag" "$HOST_CASE" >"$TMP_ROOT/docker-build.log" 2>&1 \
-        || { tail -100 "$TMP_ROOT/docker-build.log" >&2; fail "Docker image build"; }
-    pass "Docker image build with restricted context"
+    image_tag=""
+    for image_platform in amd64 arm64; do
+        candidate_tag="${image_tag_base}-${image_platform}"
+        docker build --pull --platform "linux/$image_platform" \
+            --build-arg "USER_ID=$(id -u)" --build-arg "GROUP_ID=$(id -g)" \
+            --build-arg "EXPORTER_VERSION=$release_version" \
+            -f "$HOST_CASE/docker/Dockerfile" -t "$candidate_tag" "$HOST_CASE" >"$TMP_ROOT/docker-build-$image_platform.log" 2>&1 \
+            || { tail -100 "$TMP_ROOT/docker-build-$image_platform.log" >&2; docker image rm "$candidate_tag" >/dev/null 2>&1 || true; fail "Docker linux/$image_platform image build"; }
+        reported_arch=$(docker image inspect --format '{{.Architecture}}' "$candidate_tag")
+        [ "$reported_arch" = "$image_platform" ] \
+            || { docker image rm "$candidate_tag" >/dev/null 2>&1 || true; fail "Docker image architecture ($reported_arch) does not match requested $image_platform"; }
+        expected_elf_machine=3e00
+        [ "$image_platform" = arm64 ] && expected_elf_machine=b700
+        image_elf_machine=$(docker run --platform "linux/$image_platform" --rm --entrypoint /bin/sh "$candidate_tag" -c \
+            'od -An -tx1 -j18 -N2 /usr/local/bin/hl_exporter | tr -d "[:space:]"')
+        [ "$image_elf_machine" = "$expected_elf_machine" ] \
+            || { docker image rm "$candidate_tag" >/dev/null 2>&1 || true; fail "Docker exporter ELF architecture ($image_elf_machine) does not match requested $image_platform"; }
+        pass "Docker linux/$image_platform image build, architecture, and restricted context"
+        if [ "$image_platform" = "$platform_name" ]; then
+            image_tag=$candidate_tag
+        fi
+    done
+    [ -n "$image_tag" ] || fail "host architecture is not amd64 or arm64"
     container_name="purrmetheus-validation-$$"
     # Let Docker choose an unused host port.  A fixed port made the required
     # runtime gate fail when an operator's exporter or another test already
@@ -597,24 +638,26 @@ else
         --replica-metrics --evm-metrics --contract-metrics --extended-metrics \
         --per-peer-metrics >"$TMP_ROOT/container-id"; then
         docker rm -f "$container_name" >/dev/null 2>&1 || true
-        docker image rm "$image_tag" >/dev/null 2>&1 || true
+        docker image rm "${image_tag_base}-amd64" "${image_tag_base}-arm64" >/dev/null 2>&1 || true
         fail "Docker exporter container start"
     fi
     [ "$(docker inspect --format '{{.Config.User}}' "$container_name")" = "$(id -u):$(id -g)" ] \
-        || { docker logs "$container_name" >&2 || true; docker rm -f "$container_name" >/dev/null 2>&1 || true; docker image rm "$image_tag" >/dev/null 2>&1 || true; fail "Docker exporter did not run as the requested non-root user"; }
+        || { docker logs "$container_name" >&2 || true; docker rm -f "$container_name" >/dev/null 2>&1 || true; docker image rm "${image_tag_base}-amd64" "${image_tag_base}-arm64" >/dev/null 2>&1 || true; fail "Docker exporter did not run as the requested non-root user"; }
     mapped_port=$(docker port "$container_name" 8086/tcp | awk -F: 'NR == 1 { print $NF }')
     [[ "$mapped_port" =~ ^[0-9]+$ ]] \
-        || { docker logs "$container_name" >&2 || true; docker rm -f "$container_name" >/dev/null 2>&1 || true; docker image rm "$image_tag" >/dev/null 2>&1 || true; fail "Docker exporter ephemeral port mapping"; }
+        || { docker logs "$container_name" >&2 || true; docker rm -f "$container_name" >/dev/null 2>&1 || true; docker image rm "${image_tag_base}-amd64" "${image_tag_base}-arm64" >/dev/null 2>&1 || true; fail "Docker exporter ephemeral port mapping"; }
     container_ok=false
     attempts=0
     while [ "$attempts" -lt 60 ]; do
         attempts=$((attempts + 1))
+        metrics_file="$TMP_ROOT/container.metrics"
         if curl -fsS "http://127.0.0.1:${mapped_port}/livez" >/dev/null 2>&1 && \
             curl -fsS "http://127.0.0.1:${mapped_port}/readyz" >/dev/null 2>&1 && \
-            curl -fsS "http://127.0.0.1:${mapped_port}/metrics" | rg -q 'hl_exporter_ready' && \
-            curl -fsS "http://127.0.0.1:${mapped_port}/metrics" | rg -q 'hl_exporter_source_enabled' && \
-            curl -fsS "http://127.0.0.1:${mapped_port}/metrics" | rg -q '^hl_evm_' && \
-            curl -fsS "http://127.0.0.1:${mapped_port}/metrics" | rg -q '^hl_replica_'; then
+            curl -fsS "http://127.0.0.1:${mapped_port}/metrics" -o "$metrics_file" && \
+            grep -Eq 'hl_exporter_ready' "$metrics_file" && \
+            grep -Eq 'hl_exporter_source_enabled' "$metrics_file" && \
+            grep -Eq '^hl_evm_' "$metrics_file" && \
+            grep -Eq '^hl_replica_' "$metrics_file"; then
             container_ok=true
             break
         fi
@@ -622,7 +665,7 @@ else
     done
     docker logs "$container_name" >"$TMP_ROOT/container.log" 2>&1 || true
     docker rm -f "$container_name" >/dev/null 2>&1 || true
-    docker image rm "$image_tag" >/dev/null 2>&1 || true
+    docker image rm "${image_tag_base}-amd64" "${image_tag_base}-arm64" >/dev/null 2>&1 || true
     [ "$container_ok" = true ] || { tail -100 "$TMP_ROOT/container.log" >&2; fail "Docker exporter runtime smoke"; }
     pass "Docker exporter non-root all-profile /livez, /readyz, and /metrics runtime smoke (ephemeral port)"
 fi

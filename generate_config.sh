@@ -45,6 +45,13 @@ set +a
 : "${NODE_LABEL:=hl-node}"
 : "${EXPORTER_VERSION:=v4.0.7}"
 : "${EXPORTER_EXTRA_FLAGS:=}"
+: "${SKIP_VERSION_CHECK:=false}"
+: "${SKIP_UPDATE_CHECK:=false}"
+# The runtime image follows the invoking user's identity by default. CI or a
+# different node account can provide explicit non-root IDs without running the
+# generator under sudo.
+: "${EXPORTER_UID:=}"
+: "${EXPORTER_GID:=}"
 : "${INFO_ENDPOINT_URL:=}"
 # A deliberately empty value disables the optional projection mount.  Use an
 # explicit presence check because `:=` would turn an intentional empty value
@@ -57,13 +64,16 @@ fi
 : "${GRAFANA_PORT:=3000}"
 : "${PROMETHEUS_RETENTION:=30d}"
 
-case "$USE_DOCKER" in
-    true|false) ;;
-    *)
-        echo "ERROR: USE_DOCKER must be 'true' or 'false' (got '$USE_DOCKER')." >&2
-        exit 1
-        ;;
-esac
+for boolean_name in USE_DOCKER SKIP_VERSION_CHECK SKIP_UPDATE_CHECK; do
+    boolean_value=${!boolean_name}
+    case "$boolean_value" in
+        true|false) ;;
+        *)
+            echo "ERROR: $boolean_name must be 'true' or 'false' (got '$boolean_value')." >&2
+            exit 1
+            ;;
+    esac
+done
 
 CHAIN=$(printf '%s' "$CHAIN" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
 case "$CHAIN" in
@@ -108,7 +118,7 @@ if ! [[ "$PROMETHEUS_RETENTION" =~ ^[0-9]+(ms|s|m|h|d|w|y)([0-9]+(ms|s|m|h|d|w|y
 fi
 
 for value_name in INFO_ENDPOINT_URL CRIT_LOCATIONS_DIR NODE_HOME NODE_BINARY BINARY_HOME \
-    GRAFANA_ADMIN_USER GRAFANA_ADMIN_PASSWORD; do
+    GRAFANA_ADMIN_USER GRAFANA_ADMIN_PASSWORD EXPORTER_UID EXPORTER_GID; do
     value=${!value_name:-}
     if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
         echo "ERROR: $value_name must not contain a newline." >&2
@@ -222,24 +232,49 @@ if [ "$USE_DOCKER" = "true" ] && [ "$PROBE_INFO_ENABLED" = "true" ] && [ -z "$IN
 fi
 if [ "$USE_DOCKER" = "true" ] && [ "$PROBE_INFO_ENABLED" = "true" ]; then
     info_url_lower=$(printf '%s' "$INFO_ENDPOINT_URL" | tr '[:upper:]' '[:lower:]')
-    if [[ "$info_url_lower" =~ ^https?://(localhost|127\.[0-9.]+|\[::1\])([:/]|$) ]]; then
+    info_authority=${info_url_lower#*://}
+    info_authority=${info_authority%%/*}
+    info_authority=${info_authority%%\?*}
+    info_host=${info_authority##*@}
+    if [[ "$info_host" == \[*\]* ]]; then
+        info_host=${info_host#\[}
+        info_host=${info_host%%\]*}
+    else
+        info_host=${info_host%%:*}
+    fi
+    case "$info_host" in
+        localhost|localhost.|0.0.0.0|127.*|::1|::1%*|0:0:0:0:0:0:0:1|\
+        ::ffff:127.*|::ffff:7f*|0:0:0:0:0:ffff:7f*)
         echo "ERROR: INFO_ENDPOINT_URL cannot use loopback in Dockerized-node mode; point it at a published host or service address." >&2
         exit 1
-    fi
+        ;;
+    esac
 fi
 
-USER_ID=$(id -u)
-GROUP_ID=$(id -g)
+if [ -n "$EXPORTER_UID" ]; then USER_ID=$EXPORTER_UID; else USER_ID=$(id -u); fi
+if [ -n "$EXPORTER_GID" ]; then GROUP_ID=$EXPORTER_GID; else GROUP_ID=$(id -g); fi
+if ! [[ "$USER_ID" =~ ^[1-9][0-9]{0,9}$ ]] || ((USER_ID > 2147483647)); then
+    echo "ERROR: EXPORTER_UID must be a non-root decimal UID from 1 to 2147483647 (got '$USER_ID')." >&2
+    exit 1
+fi
+if ! [[ "$GROUP_ID" =~ ^[1-9][0-9]{0,9}$ ]] || ((GROUP_ID > 2147483647)); then
+    echo "ERROR: EXPORTER_GID must be a non-root decimal GID from 1 to 2147483647 (got '$GROUP_ID')." >&2
+    exit 1
+fi
 export USER_ID GROUP_ID
 echo "Building for UID=$USER_ID GID=$GROUP_ID, chain=$CHAIN, exporter=$EXPORTER_VERSION"
 
-# Build the JSON-array command passed to the exporter.  When the node binary
-# is not bind-mounted into the container (USE_DOCKER=true), --skip-version-check
-# and --skip-update-check stop the exporter from trying to look it up.
+# Build the JSON-array command passed to the exporter. When the node binary is
+# not bind-mounted into the container (USE_DOCKER=true), both binary checks are
+# disabled automatically. Host operators can disable either check explicitly
+# when egress or local binary policy requires it.
 build_exporter_cmd() {
     local flags=( "start" "--chain=${CHAIN}" )
-    if [ "$USE_DOCKER" = "true" ]; then
-        flags+=( "--skip-version-check" "--skip-update-check" )
+    if [ "$USE_DOCKER" = "true" ] || [ "$SKIP_VERSION_CHECK" = "true" ]; then
+        flags+=( "--skip-version-check" )
+    fi
+    if [ "$USE_DOCKER" = "true" ] || [ "$SKIP_UPDATE_CHECK" = "true" ]; then
+        flags+=( "--skip-update-check" )
     fi
     if [ -n "$INFO_ENDPOINT_URL" ]; then
         flags+=( "--info-endpoint-url=${INFO_ENDPOINT_URL}" )
@@ -376,7 +411,9 @@ else
         export NODE_BINARY_MOUNT="      - type: bind
         source: ${node_binary_home_source}
         target: /home/hluser/node-bin
-        read_only: true"
+        read_only: true
+        bind:
+          create_host_path: false"
     fi
     export NODE_HOME BINARY_HOME
     # Long Compose volume syntax keeps spaces, colons, and backslashes in
@@ -387,10 +424,14 @@ else
         source: ${node_home_source}
         target: /home/hluser/hl
         read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: ${binary_home_source}
         target: /home/hluser/bin
-        read_only: true"
+        read_only: true
+        bind:
+          create_host_path: false"
     export EXTRA_VOLUMES=""
     export EXPORTER_TARGET="host.docker.internal:8086"
     export EXPORTER_NETWORK_BLOCK="    network_mode: host"
@@ -421,7 +462,9 @@ elif [ -d "$CRIT_LOCATIONS_DIR" ]; then
     export CRIT_LOCATIONS_MOUNT="      - type: bind
         source: ${crit_locations_source}
         target: /tmp/crit_msg_latest_stats
-        read_only: true"
+        read_only: true
+        bind:
+          create_host_path: false"
 else
     export CRIT_LOCATIONS_MOUNT=""
     echo "WARNING: CRIT_LOCATIONS_DIR=$CRIT_LOCATIONS_DIR does not exist; critical-location source will be unavailable." >&2

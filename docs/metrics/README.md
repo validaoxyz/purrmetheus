@@ -5,8 +5,11 @@ The upstream [metrics reference](https://github.com/validaoxyz/hyperliquid-expor
 is the authoritative inventory and interpretation guide. Optional families are
 absent unless their exporter flag is enabled.
 
-Every Hyperliquid scrape series receives the stack's external `chain`, `node`, and
-`node_mode` labels (`host` or `docker`).
+The `hyperliquid` scrape target receives static `chain`, `node`, and `node_mode`
+labels (`host` or `docker`). Prometheus also configures `chain` and `node` as
+external labels for outbound systems; external labels are not local labels on
+every queried series, and the `node_exporter` target does not receive
+`node_mode`.
 The exporter also publishes source-state and monitor-lifecycle families. Use
 those families to qualify a value before treating it as a health signal.
 
