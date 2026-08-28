@@ -12,10 +12,11 @@ scrape_configs:
   - job_name: 'hyperliquid'
     static_configs:
       - targets:
-          - 'hl_exporter:8086'
+          - '${EXPORTER_TARGET}'
         labels:
           chain: '${CHAIN}'
           node: '${NODE_LABEL}'
+          node_mode: '${NODE_MODE}'
 
   - job_name: 'node_exporter'
     static_configs:

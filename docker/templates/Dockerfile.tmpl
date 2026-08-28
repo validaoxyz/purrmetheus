@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171
 
 ARG USER_ID=${USER_ID}
 ARG GROUP_ID=${GROUP_ID}
@@ -14,34 +14,65 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         tini \
     && rm -rf /var/lib/apt/lists/*
 
-RUN getent group ${GROUP_ID} >/dev/null \
-        || groupadd -g ${GROUP_ID} hluser; \
-    getent passwd ${USER_ID} >/dev/null \
-        || useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /usr/sbin/nologin hluser
+RUN set -eux; \
+    getent group "${GROUP_ID}" >/dev/null || groupadd -g "${GROUP_ID}" hluser; \
+    getent passwd "${USER_ID}" >/dev/null || useradd -u "${USER_ID}" -g "${GROUP_ID}" -m -s /usr/sbin/nologin hluser; \
+    mkdir -p /home/hluser /app; \
+    chown "${USER_ID}:${GROUP_ID}" /home/hluser /app
 
+# Fetch and verify the release asset without executing it during the image
+# build. BuildKit commonly cross-builds linux/amd64 and linux/arm64 on one
+# host; running the target binary here would require architecture emulation.
 RUN set -eux; \
     case "${TARGETARCH}" in \
         amd64) ARCH=amd64 ;; \
         arm64) ARCH=arm64 ;; \
         *) echo "Unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    if [ -z "${EXPORTER_VERSION}" ] || [ "${EXPORTER_VERSION}" = "latest" ]; then \
-        URL=$(curl -fsSL https://api.github.com/repos/validaoxyz/hyperliquid-exporter/releases/latest \
-            | jq -r --arg arch "$ARCH" \
-                '.assets[] | select(.name == ("hl_exporter_linux_" + $arch)) | .browser_download_url'); \
-    else \
-        URL="https://github.com/validaoxyz/hyperliquid-exporter/releases/download/${EXPORTER_VERSION}/hl_exporter_linux_${ARCH}"; \
+    ASSET_NAME="hl_exporter_linux_${ARCH}"; \
+    case "${EXPORTER_VERSION}:${ARCH}" in \
+        v4.0.7:amd64) \
+            TAG=v4.0.7; DIGEST=64ffdcb2afa19f407058a6fdd8c55ea4792e194551f0c890676dff45d26d11bd ;; \
+        v4.0.7:arm64) \
+            TAG=v4.0.7; DIGEST=40bc92a89e349e270dea56b1f6a5a721d7de7a3fb15618a35f1f0830dd457e70 ;; \
+        *) \
+            if [ -z "${EXPORTER_VERSION}" ] || [ "${EXPORTER_VERSION}" = "latest" ]; then \
+                RELEASE_API=https://api.github.com/repos/validaoxyz/hyperliquid-exporter/releases/latest; \
+            else \
+                RELEASE_API="https://api.github.com/repos/validaoxyz/hyperliquid-exporter/releases/tags/${EXPORTER_VERSION}"; \
+            fi; \
+            RELEASE_JSON=$(curl -fsSL --retry 3 "$RELEASE_API"); \
+            URL=$(printf '%s' "$RELEASE_JSON" | jq -er --arg name "$ASSET_NAME" \
+                '.assets[] | select(.name == $name) | .browser_download_url'); \
+            TAG=$(printf '%s' "$RELEASE_JSON" | jq -er '.tag_name'); \
+            if [ "${EXPORTER_VERSION}" != "latest" ] && [ "${EXPORTER_VERSION}" != "" ] && [ "$TAG" != "${EXPORTER_VERSION}" ]; then \
+                echo "Release API returned tag ${TAG}, expected ${EXPORTER_VERSION}" >&2; exit 1; \
+            fi; \
+            DIGEST=$(printf '%s' "$RELEASE_JSON" | jq -r --arg name "$ASSET_NAME" \
+                '.assets[] | select(.name == $name) | (.digest // "")' | sed 's/^sha256://'); \
+            if [ -z "$DIGEST" ]; then \
+                DIGEST=$(curl -fsSL --retry 3 \
+                    "https://github.com/validaoxyz/hyperliquid-exporter/releases/download/${TAG}/SHA256SUMS" \
+                    | awk -v name="$ASSET_NAME" '$2 == name || $2 == "./" name { print $1; exit }'); \
+            fi ;; \
+    esac; \
+    if [ -z "${URL:-}" ]; then \
+        URL="https://github.com/validaoxyz/hyperliquid-exporter/releases/download/${TAG}/${ASSET_NAME}"; \
     fi; \
-    if [ -z "${URL}" ]; then echo "Could not resolve hl_exporter download URL" >&2; exit 1; fi; \
+    if ! printf '%s\n' "$DIGEST" | grep -Eq '^[0-9a-fA-F]{64}$'; then \
+        echo "No valid SHA-256 digest for ${ASSET_NAME} in ${TAG}" >&2; exit 1; \
+    fi; \
     echo "Downloading hl_exporter from ${URL}"; \
-    curl -fsSL "${URL}" -o /usr/local/bin/hl_exporter; \
+    curl -fsSL --retry 3 "${URL}" -o /usr/local/bin/hl_exporter; \
+    printf '%s  %s\n' "$DIGEST" /usr/local/bin/hl_exporter | sha256sum -c -; \
     chmod 0755 /usr/local/bin/hl_exporter; \
-    /usr/local/bin/hl_exporter version || true
+    test -s /usr/local/bin/hl_exporter
 
-USER hluser
+USER ${USER_ID}:${GROUP_ID}
 WORKDIR /app
 
-ENV NODE_HOME=/home/hluser/hl \
+ENV HOME=/home/hluser \
+    NODE_HOME=/home/hluser/hl \
     BINARY_HOME=/home/hluser/bin
 
 EXPOSE 8086

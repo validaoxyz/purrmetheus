@@ -67,7 +67,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
       "fieldConfig": { "defaults": { "color": { "fixedColor": "dark-yellow", "mode": "fixed" }, "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["last"], "fields": "", "values": false }, "textMode": "value", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_core_block_height", "instant": true, "legendFormat": "Block Height", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_core_block_height) and on(job, instance) max by(job, instance) (hl_exporter_source_enabled{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_ever_observed{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_read_ok{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_schema_ok{source=~\"^(block_fast|block_legacy)$\"} == 1)", "instant": true, "legendFormat": "Block Height", "refId": "A" }]
     },
     {
       "type": "stat",
@@ -77,41 +77,45 @@
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
       "fieldConfig": { "defaults": { "color": { "fixedColor": "dark-yellow", "mode": "fixed" }, "unit": "dateTimeAsSystem", "mappings": [{ "options": { "0": { "color": "red", "index": 0, "text": "N/A" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["last"], "fields": "", "values": false }, "textMode": "value", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_core_latest_block_time * 1000", "instant": true, "legendFormat": "Latest Block", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_core_latest_block_time * 1000) and on(job, instance) max by(job, instance) (hl_exporter_source_enabled{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_ever_observed{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_read_ok{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_schema_ok{source=~\"^(block_fast|block_legacy)$\"} == 1)", "instant": true, "legendFormat": "Latest Block", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 12,
       "title": "Sync (Visor Observation Age)",
-      "description": "Seconds since the last visor observation. Higher = less in sync.",
+      "description": "Age carried by the latest valid visor sample. Higher = less in sync.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "unit": "s", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 30 }, { "color": "red", "value": 60 }] } }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["last"], "fields": "", "values": false }, "textMode": "value", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_last_observation_age_seconds", "instant": true, "legendFormat": "Age", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_last_observation_age_seconds) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "instant": true, "legendFormat": "Age", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 13,
-      "title": "Binary Up-to-Date",
+  "title": "Binary Up-to-Date",
+  "description": "Unavailable when Dockerized-node mode skips the version and update checks.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "unit": "none", "mappings": [{ "options": { "0": { "color": "red", "index": 0, "text": "Outdated" }, "1": { "color": "green", "index": 1, "text": "Up to Date" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0.5 }] } }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["last"], "fields": "", "values": false }, "textMode": "value", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_software_up_to_date", "instant": true, "legendFormat": "Status", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_software_up_to_date) and on(job, instance) (hl_exporter_source_enabled{source=\"update\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"update\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"update\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"update\"} == 1)", "instant": true, "legendFormat": "Status", "refId": "A" }]
     },
     {
-      "type": "stat",
+      "type": "table",
       "id": 14,
-      "title": "Software Version",
+      "title": "Software Build",
+      "description": "Build metadata from hl_software_version labels. The metric value is a presence marker; Dockerized-node mode may leave this panel unavailable.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 3, "w": 24, "x": 0, "y": 5 },
       "fieldConfig": { "defaults": { "color": { "mode": "fixed" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
-      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["allValues"], "fields": "/.*/", "values": false }, "text": { "valueSize": 22 }, "textMode": "value", "wideLayout": true },
-      "transformations": [{ "id": "labelsToFields", "options": { "keepLabels": ["date", "commit"], "mode": "rows", "valueLabel": "__name__" } }],
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "hl_software_version", "instant": true, "legendFormat": "Version", "refId": "A" }]
+      "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true },
+      "transformations": [
+        { "id": "labelsToFields", "options": { "keepLabels": ["date", "commit"], "mode": "rows", "valueLabel": "__name__" } },
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true, "chain": true, "node": true, "node_mode": true }, "indexByName": {}, "renameByName": { "Value": "Present" } } }
+      ],
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "(hl_software_version) and on(job, instance) (hl_exporter_source_enabled{source=\"version\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"version\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"version\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"version\"} == 1)", "instant": true, "legendFormat": "Build", "refId": "A" }]
     },
-
     {
       "type": "row",
       "id": 2,
@@ -123,12 +127,13 @@
     {
       "type": "stat",
       "id": 20,
-      "title": "Active Validators",
+      "title": "Validators in API Snapshot",
+      "description": "Rows in the latest complete validatorSummaries response, not a committee count.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 9 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_validator_count", "legendFormat": "Validators", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_validators and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0)) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "legendFormat": "Validators", "refId": "A" }]
     },
     {
       "type": "stat",
@@ -138,17 +143,18 @@
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 9 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.5 }] }, "unit": "none" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false }, "textMode": "value", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "sum(hl_consensus_validator_jailed_status)", "instant": true, "legendFormat": "Jailed", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(sum by(job, instance) (hl_consensus_validator_jailed_status and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0))) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "instant": true, "legendFormat": "Jailed", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 22,
-      "title": "Total Stake",
+      "title": "Total Stake (HYPE)",
+      "description": "Raw validatorSummaries stake converted from 1e-8 HYPE units.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 9 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_total_stake", "legendFormat": "Total", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_consensus_total_stake and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0)) / 1e8) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "legendFormat": "Total", "refId": "A" }]
     },
     {
       "type": "stat",
@@ -158,7 +164,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 9 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 10 }] }, "unit": "percent" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_jailed_stake / hl_consensus_total_stake) * 100", "legendFormat": "Jailed %", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(((hl_consensus_jailed_stake and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0)) / (hl_consensus_total_stake and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0))) * 100) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "legendFormat": "Jailed %", "refId": "A" }]
     },
     {
       "type": "table",
@@ -169,18 +175,19 @@
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.5 }] } }, "overrides": [{ "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "mappings", "value": [{ "options": { "0": { "color": "green", "index": 0, "text": "OK" }, "1": { "color": "red", "index": 1, "text": "JAILED" } }, "type": "value" }] }] }] },
       "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Value" }] },
       "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true, "signer": true, "chain": true, "node": true }, "indexByName": {}, "renameByName": {} } }],
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "hl_consensus_validator_jailed_status", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "(hl_consensus_validator_jailed_status and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0)) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }]
     },
     {
       "type": "table",
       "id": 25,
-      "title": "Top Validators by Stake",
+      "title": "Top Validators by Stake (HYPE)",
+      "description": "Top rows by raw validatorSummaries stake, displayed in HYPE.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 9, "w": 12, "x": 12, "y": 13 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" }, "overrides": [] },
       "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Value" }] },
       "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true, "signer": true, "chain": true, "node": true }, "indexByName": {}, "renameByName": {} } }],
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "topk(30, hl_consensus_validator_stake)", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "(topk(30, (hl_consensus_validator_stake and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0)) / 1e8)) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }]
     },
     {
       "type": "timeseries",
@@ -200,96 +207,93 @@
       "gridPos": { "h": 10, "w": 12, "x": 12, "y": 22 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "drawStyle": "line", "fillOpacity": 30, "lineInterpolation": "linear", "lineWidth": 1, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "off" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percent" }, "overrides": [] },
       "options": { "legend": { "calcs": [], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "sum by (name) (increase(hl_consensus_proposer_count_total[4h])) / scalar(sum(increase(hl_consensus_proposer_count_total[4h]))) * 100", "legendFormat": "{{name}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "sum by (name, signer, validator) (increase(hl_consensus_proposer_count_total[4h])) / scalar(sum(increase(hl_consensus_proposer_count_total[4h]))) * 100", "legendFormat": "{{name}} ({{validator}})", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 28,
-      "title": "Validator Jailings (over time)",
+      "title": "Validator Jail Status (over time)",
       "description": "1 = jailed, 0 = not jailed",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 30, "lineInterpolation": "linear", "lineWidth": 1, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": [], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_validator_jailed_status", "legendFormat": "{{name}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_validator_jailed_status and on(job, instance) (hl_validator_api_up == 1) and on(job, instance) (hl_validator_api_cache_stale == 0)) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_api\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_api\"} == 1)", "legendFormat": "{{name}}", "refId": "A" }]
     },
-
     {
       "type": "row",
       "id": 3,
-      "title": "VALIDATOR (requires validator node)",
+  "title": "VALIDATOR / CONSENSUS DETAILS (some panels require validator node)",
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
-      "collapsed": true,
-      "panels": [
-        {
-          "type": "timeseries",
-          "id": 30,
-          "title": "QC Participation Rate",
-          "description": "% of recent blocks where each validator signed the QC (100-block sliding window)",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 41 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_qc_participation_rate", "legendFormat": "{{name}}", "refId": "A" }]
-        },
-        {
-          "type": "timeseries",
-          "id": 31,
-          "title": "Validator Latency EMA",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 41 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "showPoints": "auto", "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "s" }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "asc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_validator_latency_ema_seconds", "legendFormat": "{{name}}", "refId": "A" }]
-        },
-        {
-          "type": "timeseries",
-          "id": 32,
-          "title": "Heartbeats Sent (rate)",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 50 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false, "showPoints": "auto" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
-          "options": { "legend": { "calcs": [], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_consensus_heartbeat_sent_total[5m])", "legendFormat": "{{name}}", "refId": "A" }]
-        },
-        {
-          "type": "stat",
-          "id": 33,
-          "title": "Current Round",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 50 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_current_round", "legendFormat": "Round", "refId": "A" }]
-        },
-        {
-          "type": "stat",
-          "id": 34,
-          "title": "Rounds per Block",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 50 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1.5 }, { "color": "red", "value": 2 }] }, "unit": "none", "decimals": 2 }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_rounds_per_block", "legendFormat": "Rounds/Block", "refId": "A" }]
-        },
-        {
-          "type": "stat",
-          "id": 35,
-          "title": "Heartbeat: Since Last Success",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 5, "w": 12, "x": 12, "y": 54 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 30 }] }, "unit": "s" }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/", "values": false }, "textMode": "auto" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_consensus_heartbeat_status{status_type=\"since_last_success\"}", "legendFormat": "{{name}}", "refId": "A" }]
-        }
-      ]
+      "collapsed": false,
+      "panels": []
     },
-
+    {
+      "type": "timeseries",
+      "id": 30,
+  "title": "QC Participation (%)",
+      "description": "Validator QC signing percentage over the latest accepted QC window (up to 100 blocks or 1 hour).",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 41 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_qc_participation_percent) and on(job, instance) (hl_exporter_source_enabled{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"consensus\"} == 1)", "legendFormat": "{{name}}", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "id": 31,
+      "title": "Validator Latency EMA",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 41 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "showPoints": "auto", "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "s" }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "asc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_validator_latency_ema_seconds) and on(job, instance) (hl_exporter_source_enabled{source=\"validator_latency_ema\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"validator_latency_ema\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"validator_latency_ema\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"validator_latency_ema\"} == 1)", "legendFormat": "{{name}}", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "id": 32,
+      "title": "Heartbeats Sent (rate)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 50 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false, "showPoints": "auto" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
+      "options": { "legend": { "calcs": [], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_consensus_heartbeat_sent_total[5m])", "legendFormat": "{{name}}", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "id": 33,
+      "title": "Current Round",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 50 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_current_round) and on(job, instance) (hl_exporter_source_enabled{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"consensus\"} == 1)", "legendFormat": "Round", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "id": 34,
+      "title": "Rounds per Block",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 50 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1.5 }, { "color": "red", "value": 2 }] }, "unit": "none", "decimals": 2 }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_rounds_per_block) and on(job, instance) (hl_exporter_source_enabled{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"consensus\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"consensus\"} == 1)", "legendFormat": "Rounds/Block", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "id": 35,
+      "title": "Heartbeat: Since Last Success",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 54 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 30 }] }, "unit": "s" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/.*/", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_consensus_heartbeat_status{status_type=\"since_last_success\"}) and on(job, instance) (hl_exporter_source_enabled{source=\"consensus_status\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"consensus_status\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"consensus_status\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"consensus_status\"} == 1)", "legendFormat": "{{name}}", "refId": "A" }]
+    },
     {
       "type": "row",
       "id": 4,
       "title": "HYPERCORE — BLOCK PRODUCTION",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 59 },
       "collapsed": false,
       "panels": []
     },
@@ -298,10 +302,10 @@
       "id": 40,
       "title": "Core Block Height",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 60 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 9, "lineWidth": 1, "showPoints": "auto", "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_core_block_height", "legendFormat": "block_height", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_core_block_height) and on(job, instance) max by(job, instance) (hl_exporter_source_enabled{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_ever_observed{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_read_ok{source=~\"^(block_fast|block_legacy)$\"} == 1) and on(job, instance) max by(job, instance) (hl_exporter_source_schema_ok{source=~\"^(block_fast|block_legacy)$\"} == 1)", "legendFormat": "block_height", "refId": "A" }]
     },
     {
       "type": "timeseries",
@@ -309,13 +313,13 @@
       "title": "p95 Block-Apply Duration",
       "description": "Histogram quantile across several rolling windows. Spikes indicate slow block apply.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 60 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "showPoints": "auto", "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ms" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "asc" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(hl_metal_apply_duration_milliseconds_bucket[5m])) by (le))", "legendFormat": "5m", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(hl_metal_apply_duration_milliseconds_bucket[1h])) by (le))", "legendFormat": "1h", "refId": "B" },
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(hl_metal_apply_duration_milliseconds_bucket[24h])) by (le))", "legendFormat": "24h", "refId": "C" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(hl_metal_apply_duration_milliseconds_bucket[5m])) by (le, state_type))", "legendFormat": "5m / {{state_type}}", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(hl_metal_apply_duration_milliseconds_bucket[1h])) by (le, state_type))", "legendFormat": "1h / {{state_type}}", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(hl_metal_apply_duration_milliseconds_bucket[24h])) by (le, state_type))", "legendFormat": "24h / {{state_type}}", "refId": "C" }
       ]
     },
     {
@@ -323,31 +327,31 @@
       "id": 42,
       "title": "Block-Apply Duration Heatmap",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 68 },
       "fieldConfig": { "defaults": { "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "scaleDistribution": { "type": "linear" } } }, "overrides": [] },
       "options": { "calculate": false, "cellGap": 1, "color": { "exponent": 0.5, "fill": "dark-orange", "min": 0, "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Spectral", "steps": 104 }, "exemplars": { "color": "rgba(255,0,255,0.7)" }, "filterValues": { "le": 1e-9 }, "legend": { "show": true }, "rowsFrame": { "layout": "auto" }, "tooltip": { "mode": "single", "showColorScale": false, "yHistogram": false }, "yAxis": { "axisPlacement": "left", "reverse": false, "unit": "ms" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "sum(increase(hl_metal_apply_duration_milliseconds_bucket[$__interval])) by (le)", "format": "heatmap", "interval": "30s", "legendFormat": "{{le}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "sum(increase(hl_metal_apply_duration_milliseconds_bucket[$__interval])) by (le, state_type)", "format": "heatmap", "interval": "30s", "legendFormat": "{{state_type}} / {{le}}", "refId": "A" }]
     },
     {
       "type": "heatmap",
       "id": 43,
       "title": "Block Time Heatmap",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 68 },
       "fieldConfig": { "defaults": { "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "scaleDistribution": { "type": "linear" } } }, "overrides": [] },
       "options": { "calculate": false, "cellGap": 1, "color": { "exponent": 0.5, "fill": "dark-orange", "min": 0, "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Spectral", "steps": 128 }, "exemplars": { "color": "rgba(255,0,255,0.7)" }, "filterValues": { "le": 0 }, "legend": { "show": true }, "rowsFrame": { "layout": "auto" }, "tooltip": { "mode": "single", "showColorScale": false, "yHistogram": false }, "yAxis": { "axisPlacement": "left", "reverse": false, "unit": "ms" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "sum(increase(hl_core_block_time_milliseconds_bucket[$__interval])) by (le)", "format": "heatmap", "interval": "30s", "legendFormat": "{{le}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "exemplar": false, "expr": "sum(increase(hl_core_block_time_milliseconds_bucket[$__interval])) by (le, state_type)", "format": "heatmap", "interval": "30s", "legendFormat": "{{state_type}} / {{le}}", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 44,
-      "title": "Transactions / sec (by type)",
-      "description": "Requires --replica-metrics flag",
+      "title": "Signed actions / sec (by action type)",
+      "description": "Validated signed actions per second. Requires --replica-metrics; this is not a transaction-count compatibility alias.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 76 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_core_tx_total[5m])", "legendFormat": "{{type}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_replica_signed_actions_total[5m])", "legendFormat": "{{action_type}}", "refId": "A" }]
     },
     {
       "type": "timeseries",
@@ -355,17 +359,16 @@
       "title": "Orders / sec",
       "description": "Requires --replica-metrics flag",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 76 },
       "fieldConfig": { "defaults": { "color": { "fixedColor": "blue", "mode": "fixed" }, "custom": { "drawStyle": "line", "fillOpacity": 30, "lineWidth": 1 }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_core_orders_total[5m])", "legendFormat": "orders/s", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_replica_orders_total[5m])", "legendFormat": "orders/s", "refId": "A" }]
     },
-
     {
       "type": "row",
       "id": 5,
       "title": "VISOR / SYNC",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 66 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 84 },
       "collapsed": false,
       "panels": []
     },
@@ -374,20 +377,20 @@
       "id": 50,
       "title": "Visor Height",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 67 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 85 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_height", "legendFormat": "Visor", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_height) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "legendFormat": "Visor", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 51,
       "title": "Blocks Applied (this run)",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 67 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 85 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_blocks_applied", "legendFormat": "Applied", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_blocks_applied) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "legendFormat": "Applied", "refId": "A" }]
     },
     {
       "type": "stat",
@@ -395,121 +398,123 @@
       "title": "Consensus Drift",
       "description": "consensus_time − wall_clock",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 67 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 85 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 5 }] }, "unit": "s", "decimals": 2 }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_consensus_ahead_of_wall_seconds", "legendFormat": "Drift", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_consensus_ahead_of_wall_seconds) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "legendFormat": "Drift", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 53,
       "title": "Snapshot Last Age",
+      "description": "Age of the last complete snapshot scan; qualify it with snapshot source health because the value is retained across failed scans.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 67 },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 85 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 600 }, { "color": "red", "value": 900 }] }, "unit": "s" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_snapshot_last_age_seconds", "legendFormat": "Age", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_snapshot_last_age_seconds and on(job, instance) (hl_exporter_source_enabled{source=\"snapshot_status\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"snapshot_status\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"snapshot_status\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"snapshot_status\"} == 1)", "legendFormat": "Age", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 54,
       "title": "Visor Height vs. Reference Lag",
+      "description": "Reference lag is plotted only for samples where hl_visor_reference_lag_populated is 1; an omitted field is not treated as zero or as a fresh value.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 71 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 89 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false, "showPoints": "auto" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [{ "matcher": { "id": "byName", "options": "reference_lag" }, "properties": [{ "id": "unit", "value": "s" }, { "id": "custom.axisPlacement", "value": "right" }] }] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_height", "legendFormat": "visor_height", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_reference_lag_seconds", "legendFormat": "reference_lag", "refId": "B" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_height) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "legendFormat": "visor_height", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_reference_lag_seconds and (hl_visor_reference_lag_populated == 1)) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "legendFormat": "reference_lag", "refId": "B" }
       ]
     },
     {
       "type": "timeseries",
       "id": 55,
-      "title": "Observation Age",
+      "title": "Observation Age (sample content)",
+      "description": "Age carried by the latest valid visor sample, not Prometheus scrape or exporter receipt age.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 71 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 89 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "spanNulls": false, "showPoints": "auto", "thresholdsStyle": { "mode": "area" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 30 }, { "color": "red", "value": 60 }] }, "unit": "s" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_visor_last_observation_age_seconds", "legendFormat": "age", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_visor_last_observation_age_seconds) and on(job, instance) (hl_exporter_source_enabled{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"visor\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"visor\"} == 1)", "legendFormat": "age", "refId": "A" }]
     },
-
     {
       "type": "row",
       "id": 6,
-      "title": "HYPEREVM (requires --evm-metrics)",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 79 },
-      "collapsed": true,
-      "panels": [
-        {
-          "type": "stat",
-          "id": 60,
-          "title": "EVM Block Height",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 80 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_evm_block_height", "legendFormat": "EVM Height", "refId": "A" }]
-        },
-        {
-          "type": "stat",
-          "id": 61,
-          "title": "EVM Accounts",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 80 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_evm_account_count", "legendFormat": "Accounts", "refId": "A" }]
-        },
-        {
-          "type": "stat",
-          "id": 62,
-          "title": "Base Fee (Gwei)",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 80 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none", "decimals": 3 }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "auto" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_evm_base_fee_gwei", "legendFormat": "{{block_type}}", "refId": "A" }]
-        },
-        {
-          "type": "stat",
-          "id": 63,
-          "title": "EVM DB Tier Lag",
-          "description": "fast − slow checkpoint",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 80 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] }, "unit": "none" }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_evm_db_checkpoint_lag_blocks", "legendFormat": "Lag", "refId": "A" }]
-        },
-        {
-          "type": "timeseries",
-          "id": 64,
-          "title": "Gas Utilization (%)",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 84 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percent" }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_evm_gas_util", "legendFormat": "{{block_type}}", "refId": "A" }]
-        },
-        {
-          "type": "timeseries",
-          "id": 65,
-          "title": "Tx by Type (rate)",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 84 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "stacking": { "group": "A", "mode": "normal" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "sum by (type) (rate(hl_evm_tx_type_total[5m]))", "legendFormat": "{{type}}", "refId": "A" }]
-        }
-      ]
+  "title": "HYPEREVM (requires --evm-metrics; persisted gap panel is always-on)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 97 },
+      "collapsed": false,
+      "panels": []
     },
-
+    {
+      "type": "stat",
+      "id": 60,
+      "title": "EVM Block Height",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 98 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_evm_block_height) and on(job, instance) (hl_exporter_source_enabled{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"evm\"} == 1)", "legendFormat": "EVM Height", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "id": 61,
+      "title": "EVM Gas Used (latest block)",
+      "description": "Gas used by the latest accepted HyperEVM block.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 98 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_evm_gas_used) and on(job, instance) (hl_exporter_source_enabled{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"evm\"} == 1)", "legendFormat": "Gas used", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "id": 62,
+      "title": "Base Fee (Gwei)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 98 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none", "decimals": 3 }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_evm_base_fee_gwei) and on(job, instance) (hl_exporter_source_enabled{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"evm\"} == 1)", "legendFormat": "Base fee", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "id": 63,
+  "title": "Persisted ABCI Checkpoint Gap (always-on)",
+      "description": "Fast minus slow persisted Core/ABCI checkpoint files. This is not current EVM execution lag.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 98 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] }, "unit": "none" }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_node_persisted_abci_height_gap{comparison=\"fast_minus_slow\"}) and on(job, instance) (hl_exporter_source_enabled{source=\"node_state\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"node_state\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"node_state\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"node_state\"} == 1)", "legendFormat": "Gap", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "id": 64,
+      "title": "Gas Utilization",
+      "description": "Ratio of gas used to gas limit for the latest accepted block; unavailable when the limit is invalid or zero.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 102 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_evm_gas_util) and on(job, instance) (hl_exporter_source_enabled{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"evm\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"evm\"} == 1)", "legendFormat": "Gas utilization", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "id": 65,
+      "title": "Tx by Type (rate)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 102 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "stacking": { "group": "A", "mode": "normal" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "sum by (type) (rate(hl_evm_tx_type_total[5m]))", "legendFormat": "{{type}}", "refId": "A" }]
+    },
     {
       "type": "row",
       "id": 7,
       "title": "NODE HEALTH",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 80 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 110 },
       "collapsed": false,
       "panels": []
     },
@@ -518,207 +523,211 @@
       "id": 70,
       "title": "hl-node Process",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 81 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 111 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [{ "options": { "0": { "color": "red", "index": 0, "text": "DOWN" }, "1": { "color": "green", "index": 1, "text": "UP" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0.5 }] }, "unit": "none" }, "overrides": [] },
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_process_up{process=\"hl-node\"}", "legendFormat": "hl-node", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_node_process_up{process=\"hl-node\"}) and on(job, instance) (hl_exporter_source_enabled{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"process\"} == 1)) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "hl-node", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 71,
       "title": "hl-visor Process",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 81 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 111 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [{ "options": { "0": { "color": "red", "index": 0, "text": "DOWN" }, "1": { "color": "green", "index": 1, "text": "UP" } }, "type": "value" }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0.5 }] }, "unit": "none" }, "overrides": [] },
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "value" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_process_up{process=\"hl-visor\"}", "legendFormat": "hl-visor", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_node_process_up{process=\"hl-visor\"}) and on(job, instance) (hl_exporter_source_enabled{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"process\"} == 1)) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "hl-visor", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 72,
       "title": "Disk Free %",
+      "description": "Filesystem free capacity from NODE_HOME. Host mode only; Docker mode does not expose the host filesystem.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 81 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 111 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "green", "value": 0.4 }] }, "unit": "percentunit", "decimals": 1 }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_disk_free_bytes / hl_node_disk_total_bytes", "legendFormat": "Free %", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_node_disk_free_bytes / hl_node_disk_total_bytes) and (hl_node_disk_total_bytes > 0) and (hl_node_disk_statfs_up == 1)) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "Free %", "refId": "A" }]
     },
     {
       "type": "stat",
       "id": 73,
-      "title": "NODE_HOME Used",
+  "title": "NODE_HOME Apparent Bytes",
+  "description": "Apparent bytes from the last complete NODE_HOME walk; hidden until the disk walk is current. Host mode only.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 81 },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 111 },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "bytes" }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_disk_used_bytes", "legendFormat": "Used", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_node_disk_used_bytes) and on(job, instance) (hl_exporter_source_enabled{source=\"disk\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"disk\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"disk\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"disk\"} == 1) and on(job, instance) (hl_node_disk_walk_up == 1)) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "Used", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 74,
       "title": "Process Resource Use",
+      "description": "Resident memory from the last complete procfs scan. Host mode only and hidden after a failed scan.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 85 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 115 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "bytes" }, "overrides": [{ "matcher": { "id": "byRegexp", "options": ".*threads|fds" }, "properties": [{ "id": "unit", "value": "none" }, { "id": "custom.axisPlacement", "value": "right" }] }] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_process_rss_bytes", "legendFormat": "rss / {{process}}", "refId": "A" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_node_process_rss_bytes) and on(job, instance) (hl_exporter_source_enabled{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"process\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"process\"} == 1)) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "rss / {{process}}", "refId": "A" }
       ]
     },
     {
       "type": "timeseries",
       "id": 75,
       "title": "Disk Subdir Sizes",
+      "description": "Apparent bytes by tracked NODE_HOME subdirectory from the last complete walk.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 85 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 115 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 30, "lineWidth": 1, "stacking": { "group": "A", "mode": "normal" } }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "bytes" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_disk_subdir_bytes", "legendFormat": "{{subdir}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "((hl_node_disk_subdir_bytes) and on(job, instance) (hl_exporter_source_enabled{source=\"disk\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"disk\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"disk\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"disk\"} == 1) and on(job, instance) (hl_node_disk_walk_up == 1)) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "{{subdir}}", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 76,
       "title": "Crits / Bugs",
+      "description": "Critical-message counters from the latest generation-compatible daily projection; retained values are hidden when unavailable.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 93 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 123 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 30, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_crits", "legendFormat": "crits / {{source}}", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_bugs", "legendFormat": "bugs / {{source}}", "refId": "B" }
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_node_crits) and on(job, instance, source) (hl_node_critical_message_projection_available{projection=\"daily\"} == 1)", "legendFormat": "crits / {{source}}", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_node_bugs) and on(job, instance, source) (hl_node_critical_message_projection_available{projection=\"daily\"} == 1)", "legendFormat": "bugs / {{source}}", "refId": "B" }
       ]
     },
     {
       "type": "timeseries",
       "id": 77,
       "title": "Snapshot Last Height",
+      "description": "Height from the last complete snapshot scan; the value is shown only while the snapshot source is enabled, observed, and healthy.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 93 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 123 },
       "fieldConfig": { "defaults": { "color": { "fixedColor": "purple", "mode": "fixed" }, "custom": { "drawStyle": "line", "fillOpacity": 9, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_snapshot_last_height", "legendFormat": "snapshot height", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_snapshot_last_height and on(job, instance) (hl_exporter_source_enabled{source=\"snapshot_status\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"snapshot_status\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"snapshot_status\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"snapshot_status\"} == 1)", "legendFormat": "snapshot height", "refId": "A" }]
     },
-
     {
       "type": "row",
       "id": 8,
       "title": "P2P / NETWORK",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 101 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 131 },
       "collapsed": false,
       "panels": []
     },
     {
       "type": "timeseries",
       "id": 80,
-      "title": "Established TCP Peers by Port",
+      "title": "Established TCP Sockets by Service",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 102 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 132 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_p2p_tcp_connections{state=\"ESTABLISHED\"}", "legendFormat": "port {{port}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_p2p_tcp_socket_connections{state=\"ESTABLISHED\"}) and on(job, instance) (hl_exporter_source_enabled{source=\"tcp_connections\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"tcp_connections\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"tcp_connections\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"tcp_connections\"} == 1) and on(job, instance) (up{job=~\"hyperliquid|hyperliquid-exporter(/.*)?\",node_mode=\"host\"} == 1)", "legendFormat": "port {{service_port}} ({{service_side}})", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 81,
-      "title": "Unique Peers Seen (window)",
+      "title": "Traffic Endpoints Observed (window)",
+      "description": "Qualified process-local traffic observations, not a connectivity or peer count.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 102 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 132 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false, "showPoints": "auto" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_p2p_unique_peers_seen", "legendFormat": "{{window}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_p2p_traffic_endpoints_seen) and on(job, instance) (hl_exporter_source_enabled{source=\"tcp_traffic\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"tcp_traffic\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"tcp_traffic\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"tcp_traffic\"} == 1)", "legendFormat": "{{window}}", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 82,
-      "title": "P2P Total Traffic",
+      "title": "P2P Traffic Source Value",
+      "description": "Raw upstream traffic value by direction; units are not normalized by the exporter.",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 110 },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "Bps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 140 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_p2p_total_traffic", "legendFormat": "{{direction}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(sum by (job, instance, direction) (hl_p2p_tcp_traffic_by_service_port)) and on(job, instance) (hl_exporter_source_enabled{source=\"tcp_traffic\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"tcp_traffic\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"tcp_traffic\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"tcp_traffic\"} == 1)", "legendFormat": "{{direction}}", "refId": "A" }]
     },
     {
       "type": "timeseries",
       "id": 83,
       "title": "Gossip Events (rate)",
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 110 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 140 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "ops" }, "overrides": [] },
       "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "rate(hl_p2p_gossip_events_total[5m])", "legendFormat": "{{event_type}}", "refId": "A" }]
     },
-
     {
       "type": "row",
       "id": 9,
       "title": "SUBSYSTEM LATENCY",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 118 },
-      "collapsed": true,
-      "panels": [
-        {
-          "type": "timeseries",
-          "id": 90,
-          "title": "Subsystem p95 Latency",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 119 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "s" }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_subsystem_latency_p95_seconds", "legendFormat": "{{subsystem}}", "refId": "A" }]
-        },
-        {
-          "type": "timeseries",
-          "id": 91,
-          "title": "Subsystem Work Fraction",
-          "description": "Fraction of wall-clock time each subsystem is doing work.",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 119 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percentunit" }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_node_subsystem_work_fraction", "legendFormat": "{{subsystem}}", "refId": "A" }]
-        }
-      ]
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 148 },
+      "collapsed": false,
+      "panels": []
     },
-
+    {
+      "type": "timeseries",
+      "id": 90,
+      "title": "Subsystem p95 Latency",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 149 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "s" }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_node_subsystem_latency_p95_seconds) and on(job, instance) (hl_exporter_source_enabled{source=\"subsystem_latency\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"subsystem_latency\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"subsystem_latency\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"subsystem_latency\"} == 1)", "legendFormat": "{{subsystem}}", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "id": 91,
+      "title": "Subsystem Work Value",
+      "description": "Raw upstream work_fraction value. It is not constrained to 0..1.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 149 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1, "spanNulls": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "(hl_node_subsystem_work_fraction) and on(job, instance) (hl_exporter_source_enabled{source=\"subsystem_latency\"} == 1) and on(job, instance) (hl_exporter_source_ever_observed{source=\"subsystem_latency\"} == 1) and on(job, instance) (hl_exporter_source_read_ok{source=\"subsystem_latency\"} == 1) and on(job, instance) (hl_exporter_source_schema_ok{source=\"subsystem_latency\"} == 1)", "legendFormat": "{{subsystem}}", "refId": "A" }]
+    },
     {
       "type": "row",
       "id": 99,
       "title": "EXPORTER SELF-HEALTH",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 119 },
-      "collapsed": true,
-      "panels": [
-        {
-          "type": "stat",
-          "id": 990,
-          "title": "Exporter Build",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 3, "w": 24, "x": 0, "y": 120 },
-          "fieldConfig": { "defaults": { "color": { "mode": "fixed" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
-          "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["allValues"], "fields": "/.*/" }, "text": { "valueSize": 18 }, "textMode": "value" },
-          "transformations": [{ "id": "labelsToFields", "options": { "keepLabels": ["version", "commit", "go_version"], "mode": "rows", "valueLabel": "__name__" } }],
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_exporter_build_info", "instant": true, "legendFormat": "Build", "refId": "A" }]
-        },
-        {
-          "type": "table",
-          "id": 991,
-          "title": "Monitor Health (seconds since last tick)",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 12, "w": 12, "x": 0, "y": 123 },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 120 }, { "color": "red", "value": 600 }] }, "unit": "s" }, "overrides": [] },
-          "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Value" }] },
-          "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true, "chain": true, "node": true }, "indexByName": {}, "renameByName": {} } }],
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "time() - hl_exporter_monitor_last_tick_seconds > 0", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }]
-        },
-        {
-          "type": "timeseries",
-          "id": 992,
-          "title": "Monitor Panics",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "gridPos": { "h": 12, "w": 12, "x": 12, "y": 123 },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1 }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
-          "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
-          "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_exporter_monitor_panics_total", "legendFormat": "{{monitor}}", "refId": "A" }]
-        }
-      ]
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 158 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "table",
+      "id": 990,
+      "title": "Exporter Build",
+      "description": "Build metadata from hl_exporter_build_info labels. The metric value is a presence marker.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 159 },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true },
+      "transformations": [{ "id": "labelsToFields", "options": { "keepLabels": ["version", "commit", "go_version"], "mode": "rows", "valueLabel": "__name__" } }, { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true, "chain": true, "node": true, "node_mode": true }, "indexByName": {}, "renameByName": { "Value": "Present" } } }],
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_exporter_build_info", "instant": true, "legendFormat": "Build", "refId": "A" }]
+    },
+    {
+      "type": "table",
+      "id": 991,
+      "title": "Monitor Health (seconds since last valid observation)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 162 },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 120 }, { "color": "red", "value": 600 }] }, "unit": "s" }, "overrides": [] },
+      "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Value" }] },
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true, "chain": true, "node": true }, "indexByName": {}, "renameByName": {} } }],
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "time() - hl_exporter_monitor_last_valid_observation_seconds", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "id": 992,
+      "title": "Monitor Panics",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 162 },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 1 }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" }, "overrides": [] },
+      "options": { "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "editorMode": "code", "expr": "hl_exporter_monitor_panics_total", "legendFormat": "{{monitor}}", "refId": "A" }]
     }
   ]
 }

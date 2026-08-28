@@ -12,6 +12,14 @@ help: ## List the available targets
 config: ## Render docker/Dockerfile, docker-compose.yaml and prometheus.yml from templates
 	@bash generate_config.sh
 
+.PHONY: test
+test: ## Run static, configuration, dashboard, and PromQL checks
+	@bash tests/validate.sh
+
+.PHONY: test-full
+test-full: ## Run the checks plus release, image, and stack smoke tests
+	@bash tests/validate.sh --full
+
 .PHONY: build
 build: config ## Build the hl_exporter image
 	$(COMPOSE) build

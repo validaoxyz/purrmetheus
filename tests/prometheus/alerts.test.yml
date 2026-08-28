@@ -1,0 +1,919 @@
+rule_files:
+  - ../../prometheus/alerts.yml
+
+evaluation_interval: 1m
+
+# These tests intentionally exercise both the historical `hyperliquid` job
+# emitted by this stack and the `hyperliquid-exporter` prefix used by the
+# upstream alert pack.  Every optional-source alert also has a negative guard
+# case so a disabled, unobserved, or malformed source cannot page on zeros.
+tests:
+  - name: exporter down accepts both supported job prefixes
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="legacy"}'
+        values: '0 0 0 0'
+      - series: 'up{job="hyperliquid-exporter/subnet",instance="upstream"}'
+        values: '0 0 0 0'
+      - series: 'up{job="other-exporter",instance="unrelated"}'
+        values: '0 0 0 0'
+      - series: 'up{job="hyperliquid/other",instance="unrelated-hyperliquid"}'
+        values: '0 0 0 0'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HyperliquidExporterDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: legacy
+            exp_annotations:
+              summary: "Hyperliquid exporter scrape target is down"
+              description: "Prometheus has not successfully scraped the exporter target for 2 minutes."
+          - exp_labels:
+              severity: critical
+              job: hyperliquid-exporter/subnet
+              instance: upstream
+            exp_annotations:
+              summary: "Hyperliquid exporter scrape target is down"
+              description: "Prometheus has not successfully scraped the exporter target for 2 minutes."
+
+  - name: exporter readiness requires a live scrape
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="node-a"}'
+        values: '1x7'
+      - series: 'hl_exporter_ready{job="hyperliquid",instance="node-a"}'
+        values: '0x7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: HyperliquidExporterNotReady
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+            exp_annotations:
+              summary: "Hyperliquid exporter has not reached startup readiness"
+              description: "Registered exporter workers have not all started after 5 minutes. Readiness does not attest node data health."
+
+  - name: process alerts require a valid procfs source
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="node-a",node_mode="host"}'
+        values: '1x4'
+      - series: 'hl_node_process_up{job="hyperliquid",instance="node-a",node_mode="host",process="hl-node"}'
+        values: '0x4'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",node_mode="host",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",node_mode="host",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",node_mode="host",source="process"}'
+        values: '1x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HyperliquidNodeProcessDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: node-a
+              node_mode: host
+              process: hl-node
+            exp_annotations:
+              summary: "The hl-node process is not present"
+              description: "Complete valid procfs scans have not found the hl-node process for 2 minutes."
+
+  - name: visor process alert fires independently
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="node-a",node_mode="host"}'
+        values: '1x4'
+      - series: 'hl_node_process_up{job="hyperliquid",instance="node-a",node_mode="host",process="hl-visor"}'
+        values: '0x4'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",node_mode="host",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",node_mode="host",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",node_mode="host",source="process"}'
+        values: '1x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HyperliquidVisorProcessDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: node-a
+              node_mode: host
+              process: hl-visor
+            exp_annotations:
+              summary: "The hl-visor process is not present"
+              description: "Complete valid procfs scans have not found the hl-visor process for 2 minutes."
+
+  - name: process alerts stay quiet when the source is unreadable
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="bad",node_mode="host"}'
+        values: '1x5'
+      - series: 'hl_node_process_up{job="hyperliquid",instance="bad",node_mode="host",process="hl-node"}'
+        values: '0x5'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="bad",node_mode="host",source="process"}'
+        values: '1x5'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="bad",node_mode="host",source="process"}'
+        values: '0x5'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="bad",node_mode="host",source="process"}'
+        values: '1x5'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: HyperliquidNodeProcessDown
+        exp_alerts: []
+
+  - name: Dockerized process profile stays quiet without host liveness proof
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="docker",node_mode="docker"}'
+        values: '1x4'
+      - series: 'hl_node_process_up{job="hyperliquid",instance="docker",node_mode="docker",process="hl-node"}'
+        values: '0x4'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="docker",node_mode="docker",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="docker",node_mode="docker",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="docker",node_mode="docker",source="process"}'
+        values: '1x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HyperliquidNodeProcessDown
+        exp_alerts: []
+
+  - name: process alerts fail closed when node_mode is absent
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="unlabeled"}'
+        values: '1x4'
+      - series: 'hl_node_process_up{job="hyperliquid",instance="unlabeled",process="hl-node"}'
+        values: '0x4'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="unlabeled",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="unlabeled",source="process"}'
+        values: '1x4'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="unlabeled",source="process"}'
+        values: '1x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HyperliquidNodeProcessDown
+        exp_alerts: []
+
+  - name: visor stale alert requires a complete first observation
+    interval: 1m
+    input_series:
+      - series: 'hl_visor_last_observation_age_seconds{job="hyperliquid",instance="node-a"}'
+        values: '120x3'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="node-a",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",source="visor"}'
+        values: '1x3'
+      - series: 'hl_visor_last_observation_age_seconds{job="hyperliquid",instance="never"}'
+        values: '120x3'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="never",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="never",source="visor"}'
+        values: '0x3'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="never",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="never",source="visor"}'
+        values: '1x3'
+      - series: 'hl_visor_last_observation_age_seconds{job="hyperliquid",instance="worker-stopped"}'
+        values: '10x3'
+      - series: 'hl_exporter_source_last_valid_age_seconds{job="hyperliquid",instance="worker-stopped",source="visor"}'
+        values: '120x3'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="worker-stopped",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="worker-stopped",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="worker-stopped",source="visor"}'
+        values: '1x3'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="worker-stopped",source="visor"}'
+        values: '1x3'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: NodeNotInSync
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+            exp_annotations:
+              summary: "Visor observation is stale"
+              description: "Visor observation or exporter receipt age is above 60 seconds. This does not prove that the network or every node process is out of sync."
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: worker-stopped
+            exp_annotations:
+              summary: "Visor observation is stale"
+              description: "Visor observation or exporter receipt age is above 60 seconds. This does not prove that the network or every node process is out of sync."
+
+  - name: snapshot stale alert fires after five minutes
+    interval: 1m
+    input_series:
+      - series: 'hl_node_snapshot_last_age_seconds{job="hyperliquid",instance="node-a"}'
+        values: '1000x7'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="node-a",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_node_snapshot_last_age_seconds{job="hyperliquid",instance="worker-stopped"}'
+        values: '10x7'
+      - series: 'hl_exporter_source_last_valid_age_seconds{job="hyperliquid",instance="worker-stopped",source="snapshot_status"}'
+        values: '1000x7'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="worker-stopped",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="worker-stopped",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="worker-stopped",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="worker-stopped",source="snapshot_status"}'
+        values: '1x7'
+      # A source can have a valid receipt age even when the content-specific
+      # snapshot gauge is absent.  The alert must retain that fallback.
+      - series: 'hl_exporter_source_last_valid_age_seconds{job="hyperliquid",instance="receipt-only",source="snapshot_status"}'
+        values: '1000x7'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="receipt-only",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="receipt-only",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="receipt-only",source="snapshot_status"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="receipt-only",source="snapshot_status"}'
+        values: '1x7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: HyperliquidSnapshotEvidenceStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+            exp_annotations:
+              summary: "Periodic snapshot evidence is stale"
+              description: "The latest valid snapshot evidence or exporter receipt is older than 15 minutes. This measures evidence age, not a guaranteed snapshot interval."
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: worker-stopped
+            exp_annotations:
+              summary: "Periodic snapshot evidence is stale"
+              description: "The latest valid snapshot evidence or exporter receipt is older than 15 minutes. This measures evidence age, not a guaranteed snapshot interval."
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: receipt-only
+            exp_annotations:
+              summary: "Periodic snapshot evidence is stale"
+              description: "The latest valid snapshot evidence or exporter receipt is older than 15 minutes. This measures evidence age, not a guaranteed snapshot interval."
+
+  - name: disk alerts use independent statfs state
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="critical",node_mode="host"}'
+        values: '1x7'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="critical",node_mode="host"}'
+        values: '1x7'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="critical",node_mode="host"}'
+        values: '100x7'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="critical",node_mode="host"}'
+        values: '5x7'
+      - series: 'up{job="hyperliquid",instance="failed",node_mode="host"}'
+        values: '1x7'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="failed",node_mode="host"}'
+        values: '0x7'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="failed",node_mode="host"}'
+        values: '100x7'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="failed",node_mode="host"}'
+        values: '5x7'
+      - series: 'up{job="hyperliquid",instance="docker",node_mode="docker"}'
+        values: '1x7'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="docker",node_mode="docker"}'
+        values: '1x7'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="docker",node_mode="docker"}'
+        values: '100x7'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="docker",node_mode="docker"}'
+        values: '5x7'
+      - series: 'up{job="hyperliquid",instance="walk-failed",node_mode="host"}'
+        values: '1x7'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="walk-failed",node_mode="host"}'
+        values: '1x7'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="walk-failed",node_mode="host"}'
+        values: '100x7'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="walk-failed",node_mode="host"}'
+        values: '5x7'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="walk-failed",source="disk"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="walk-failed",source="disk"}'
+        values: '0x7'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="walk-failed",source="disk"}'
+        values: '1x7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: DiskFillingUp
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: critical
+              node_mode: host
+            exp_annotations:
+              summary: "Less than 10% disk free on NODE_HOME filesystem"
+              description: "The filesystem holding NODE_HOME has less than 10% available space."
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: walk-failed
+              node_mode: host
+            exp_annotations:
+              summary: "Less than 10% disk free on NODE_HOME filesystem"
+              description: "The filesystem holding NODE_HOME has less than 10% available space."
+
+  - name: disk warning covers only the ten-to-twenty percent band
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="warning",node_mode="host"}'
+        values: '1x17'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="warning",node_mode="host"}'
+        values: '1x17'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="warning",node_mode="host"}'
+        values: '100x17'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="warning",node_mode="host"}'
+        values: '15x17'
+      - series: 'up{job="hyperliquid",instance="healthy",node_mode="host"}'
+        values: '1x17'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="healthy",node_mode="host"}'
+        values: '25x17'
+      - series: 'up{job="hyperliquid",instance="docker-warning",node_mode="docker"}'
+        values: '1x17'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="docker-warning",node_mode="docker"}'
+        values: '1x17'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="docker-warning",node_mode="docker"}'
+        values: '100x17'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="docker-warning",node_mode="docker"}'
+        values: '15x17'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: DiskFillingUpWarning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: warning
+              node_mode: host
+            exp_annotations:
+              summary: "Less than 20% disk free on NODE_HOME filesystem"
+              description: "The filesystem holding NODE_HOME has less than 20% available space."
+
+  - name: disk alerts fail closed when node_mode is absent
+    interval: 1m
+    input_series:
+      - series: 'up{job="hyperliquid",instance="unlabeled-disk"}'
+        values: '1x7'
+      - series: 'hl_node_disk_statfs_up{job="hyperliquid",instance="unlabeled-disk"}'
+        values: '1x7'
+      - series: 'hl_node_disk_total_bytes{job="hyperliquid",instance="unlabeled-disk"}'
+        values: '100x7'
+      - series: 'hl_node_disk_free_bytes{job="hyperliquid",instance="unlabeled-disk"}'
+        values: '5x7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: DiskFillingUp
+        exp_alerts: []
+
+  - name: bug gauge requires the matched daily projection
+    interval: 1m
+    input_series:
+      - series: 'hl_node_bugs{job="hyperliquid",instance="node-a",source="hl-visor"}'
+        values: '1x3'
+      - series: 'hl_node_critical_message_projection_available{job="hyperliquid",instance="node-a",source="hl-visor",projection="daily"}'
+        values: '1x3'
+      - series: 'hl_node_bugs{job="hyperliquid",instance="unavailable",source="hl-visor"}'
+        values: '1x3'
+      - series: 'hl_node_critical_message_projection_available{job="hyperliquid",instance="unavailable",source="hl-visor",projection="daily"}'
+        values: '0x3'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: BugEmitted
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: node-a
+              source: hl-visor
+            exp_annotations:
+              summary: "The node reported a bug event"
+              description: "The current source process generation reports one or more bug events."
+
+  - name: max-peer rejection survives a later source read failure
+    interval: 1m
+    input_series:
+      - series: 'hl_p2p_gossip_events_total{job="hyperliquid",instance="node-a",event_type="rejecting_gossip_stream_max_peers_reached"}'
+        values: '0 0 1 1 1 1 1 1 1 1 1 1'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="node-a",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_p2p_gossip_source_up{job="hyperliquid",instance="node-a"}'
+        values: '1x12'
+      - series: 'hl_p2p_gossip_events_total{job="hyperliquid",instance="bad",event_type="rejecting_gossip_stream_max_peers_reached"}'
+        values: '0 0 1 1 1 1 1 1 1 1 1 1'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="bad",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="bad",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="bad",source="gossip_connections"}'
+        values: '0x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="bad",source="gossip_connections"}'
+        values: '1x12'
+      - series: 'hl_p2p_gossip_source_up{job="hyperliquid",instance="bad"}'
+        values: '1x12'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: MaxPeersReached
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              event_type: rejecting_gossip_stream_max_peers_reached
+            exp_annotations:
+              summary: "Gossip streams were rejected at the peer cap"
+              description: "The enabled gossip source recorded a max-peer rejection in the last 10 minutes; a later source read failure does not erase that event."
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: bad
+              event_type: rejecting_gossip_stream_max_peers_reached
+            exp_annotations:
+              summary: "Gossip streams were rejected at the peer cap"
+              description: "The enabled gossip source recorded a max-peer rejection in the last 10 minutes; a later source read failure does not erase that event."
+
+  - name: slow block apply uses subsystem source state
+    interval: 1m
+    input_series:
+      - series: 'hl_node_subsystem_latency_p95_seconds{job="hyperliquid",instance="node-a",subsystem="node_fast_begin_block_to_commit"}'
+        values: '0.2x7'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",source="subsystem_latency"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="node-a",source="subsystem_latency"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",source="subsystem_latency"}'
+        values: '1x7'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",source="subsystem_latency"}'
+        values: '1x7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: BlockApplySlow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              subsystem: node_fast_begin_block_to_commit
+            exp_annotations:
+              summary: "p95 begin-block to commit latency exceeds 100 ms"
+              description: "The latest valid subsystem latency sample exceeds 100 ms for 5 minutes."
+
+  - name: core height stalled uses deriv and scrape health
+    interval: 1m
+    input_series:
+      - series: 'hl_core_block_height{job="hyperliquid",instance="stalled"}'
+        values: '1000x13'
+      - series: 'up{job="hyperliquid",instance="stalled"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="stalled",source="block_fast"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="stalled",source="block_fast"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="stalled",source="block_fast"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="stalled",source="block_fast"}'
+        values: '1x13'
+      # Receipt age is intentionally stale here: it must not suppress a
+      # genuine height stall once the source is otherwise readable/valid.
+      - series: 'hl_exporter_source_last_valid_age_seconds{job="hyperliquid",instance="stalled",source="block_fast"}'
+        values: '9999x13'
+      - series: 'hl_core_block_height{job="hyperliquid",instance="down"}'
+        values: '1000x13'
+      - series: 'up{job="hyperliquid",instance="down"}'
+        values: '0x13'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: HyperliquidCoreHeightStalled
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: stalled
+            exp_annotations:
+              summary: "Hyperliquid Core height has stalled"
+              description: "Reported Core height has advanced at less than 1 block per second for 5 minutes while the exporter target is scrapeable."
+
+  - name: core height slow uses the one-to-five block per second range
+    interval: 1m
+    input_series:
+      - series: 'hl_core_block_height{job="hyperliquid",instance="slow"}'
+        values: '0+120x22'
+      - series: 'up{job="hyperliquid",instance="slow"}'
+        values: '1x23'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="slow",source="block_fast"}'
+        values: '1x23'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="slow",source="block_fast"}'
+        values: '1x23'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="slow",source="block_fast"}'
+        values: '1x23'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="slow",source="block_fast"}'
+        values: '1x23'
+    alert_rule_test:
+      - eval_time: 21m
+        alertname: HyperliquidCoreHeightSlow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: slow
+            exp_annotations:
+              summary: "Hyperliquid Core height is advancing slowly"
+              description: "Reported Core height has advanced at least 1 and below 5 blocks per second for 15 minutes while the exporter target is scrapeable."
+
+  - name: core height stays quiet when the retained block source fails
+    interval: 1m
+    input_series:
+      - series: 'hl_core_block_height{job="hyperliquid",instance="failed"}'
+        values: '1000x13'
+      - series: 'up{job="hyperliquid",instance="failed",node_mode="host"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="failed",source="block_fast"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="failed",source="block_fast"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="failed",source="block_fast"}'
+        values: '0x13'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="failed",source="block_fast"}'
+        values: '1x13'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: HyperliquidCoreHeightStalled
+        exp_alerts: []
+
+  - name: legacy block source supports a stalled-height alert
+    interval: 1m
+    input_series:
+      - series: 'hl_core_block_height{job="hyperliquid",instance="legacy"}'
+        values: '1000x13'
+      - series: 'up{job="hyperliquid",instance="legacy",node_mode="host"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="legacy",source="block_legacy"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="legacy",source="block_legacy"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="legacy",source="block_legacy"}'
+        values: '1x13'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="legacy",source="block_legacy"}'
+        values: '1x13'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: HyperliquidCoreHeightStalled
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: hyperliquid
+              instance: legacy
+            exp_annotations:
+              summary: "Hyperliquid Core height has stalled"
+              description: "Reported Core height has advanced at less than 1 block per second for 5 minutes while the exporter target is scrapeable."
+
+  - name: persisted checkpoint gap is directional and source-gated
+    interval: 1m
+    input_series:
+      - series: 'hl_node_persisted_abci_height_gap{job="hyperliquid",instance="node-a",comparison="fast_minus_slow"}'
+        values: '101x12'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="node-a",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_node_persisted_abci_height_gap{job="hyperliquid",instance="negative",comparison="fast_minus_slow"}'
+        values: '-101x12'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="negative",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="negative",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="negative",source="node_state"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="negative",source="node_state"}'
+        values: '1x12'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: PersistedABCIHeightGap
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              comparison: fast_minus_slow
+            exp_annotations:
+              summary: "Persisted Core/ABCI checkpoint gap exceeds 100 blocks"
+              description: "The fast-minus-slow persisted checkpoint gap exceeds 100 blocks. This is not current EVM execution lag."
+
+  - name: EVM mismatch counter fires on an increase
+    interval: 1m
+    input_series:
+      - series: 'hl_evm_tx_receipt_count_mismatches_total{job="hyperliquid",instance="node-a"}'
+        values: '0 0 0 1 1 1'
+      - series: 'hl_evm_tx_receipt_count_mismatches_total{job="hyperliquid",instance="flat"}'
+        values: '3 3 3 3 3 3'
+      - series: 'hl_evm_tx_receipt_count_mismatches_total{job="hyperliquid",instance="reset"}'
+        values: '9 9 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HyperliquidEVMTxReceiptCountMismatch
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+            exp_annotations:
+              summary: "Hyperliquid EVM transaction and receipt counts differed"
+              description: "At least one accepted EVM block had different transaction-array and receipt-array lengths in the last 10 minutes."
+
+  - name: EVM parse counter preserves stage and reason
+    interval: 1m
+    input_series:
+      - series: 'hl_evm_parse_errors_total{job="hyperliquid",instance="node-a",stage="decode",reason="invalid_json"}'
+        values: '0 0 1 1 1 1'
+      - series: 'hl_evm_parse_errors_total{job="hyperliquid",instance="reset",stage="decode",reason="invalid_json"}'
+        values: '8 8 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HyperliquidEVMParseErrors
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              stage: decode
+              reason: invalid_json
+            exp_annotations:
+              summary: "Hyperliquid EVM stream records were rejected"
+              description: "The exporter rejected at least one EVM stream record in the last 10 minutes."
+
+  - name: monitor exited requires a recorded exit timestamp
+    interval: 1m
+    input_series:
+      - series: 'hl_exporter_monitor_registered{job="hyperliquid",instance="node-a",monitor="consensus"}'
+        values: '1x4'
+      - series: 'hl_exporter_monitor_running{job="hyperliquid",instance="node-a",monitor="consensus"}'
+        values: '0x4'
+      - series: 'hl_exporter_monitor_exited_seconds{job="hyperliquid",instance="node-a",monitor="consensus"}'
+        values: '1720000000x4'
+      - series: 'hl_exporter_monitor_registered{job="hyperliquid",instance="never",monitor="consensus"}'
+        values: '1x4'
+      - series: 'hl_exporter_monitor_running{job="hyperliquid",instance="never",monitor="consensus"}'
+        values: '0x4'
+      - series: 'hl_exporter_monitor_exited_seconds{job="hyperliquid",instance="never",monitor="consensus"}'
+        values: '0x4'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HyperliquidExporterMonitorExited
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              monitor: consensus
+            exp_annotations:
+              summary: "A registered Hyperliquid exporter monitor is not running"
+              description: "A registered exporter monitor has remained stopped for 2 minutes."
+
+  - name: monitor panic counter fires and flat counters stay quiet
+    interval: 1m
+    input_series:
+      - series: 'hl_exporter_monitor_panics_total{job="hyperliquid",instance="node-a",monitor="consensus"}'
+        values: '0 0 0 1 1 1'
+      - series: 'hl_exporter_monitor_panics_total{job="hyperliquid",instance="flat",monitor="consensus"}'
+        values: '3x6'
+      - series: 'hl_exporter_monitor_panics_total{job="hyperliquid",instance="reset",monitor="consensus"}'
+        values: '7 7 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HyperliquidExporterMonitorPanicked
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              monitor: consensus
+            exp_annotations:
+              summary: "A Hyperliquid exporter monitor panicked"
+              description: "The exporter recorded at least one monitor panic in the last 10 minutes."
+
+  - name: dropped report counter fires with monitor label
+    interval: 1m
+    input_series:
+      - series: 'hl_exporter_monitor_error_drops_total{job="hyperliquid",instance="node-a",monitor="disk"}'
+        values: '0 0 1 1 1 1'
+      - series: 'hl_exporter_monitor_error_drops_total{job="hyperliquid",instance="flat",monitor="disk"}'
+        values: '2x6'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HyperliquidExporterErrorReportsDropped
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+              monitor: disk
+            exp_annotations:
+              summary: "Hyperliquid exporter dropped monitor error reports"
+              description: "The exporter dropped at least one error report from monitor disk in the last 10 minutes."
+
+  - name: source failure alert distinguishes read and schema failures
+    interval: 1m
+    input_series:
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="read-failed",source="block_fast"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="read-failed",source="block_fast"}'
+        values: '0x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="read-failed",source="block_fast"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="schema-failed",source="evm"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="schema-failed",source="evm"}'
+        values: '1x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="schema-failed",source="evm"}'
+        values: '0x12'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="disabled",source="optional_fills"}'
+        values: '0x12'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="disabled",source="optional_fills"}'
+        values: '0x12'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="disabled",source="optional_fills"}'
+        values: '0x12'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: HyperliquidExporterSourceReadOrSchemaFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: read-failed
+              source: block_fast
+            exp_annotations:
+              summary: "Hyperliquid exporter source block_fast failed"
+              description: "The enabled source has reported a failed read or schema outcome for 10 minutes."
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: schema-failed
+              source: evm
+            exp_annotations:
+              summary: "Hyperliquid exporter source evm failed"
+              description: "The enabled source has reported a failed read or schema outcome for 10 minutes."
+
+  - name: unknown action alert observes replica or mempool counters
+    interval: 1m
+    input_series:
+      - series: 'hl_replica_signed_actions_total{job="hyperliquid",instance="replica",action_type="other"}'
+        values: '0 0 1 1 1 1'
+      - series: 'hl_mempool_txs_signed_actions_total{job="hyperliquid",instance="mempool",type="other"}'
+        values: '0 0 0 1 1 1'
+      - series: 'hl_replica_signed_actions_total{job="hyperliquid",instance="flat",action_type="other"}'
+        values: '3x6'
+      - series: 'hl_replica_signed_actions_total{job="hyperliquid",instance="reset",action_type="other"}'
+        values: '9 9 0 0 0 0'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HyperliquidUnknownActionTypeObserved
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: replica
+            exp_annotations:
+              summary: "Hyperliquid exporter observed an unknown action type"
+              description: "At least one replica or split-client mempool action was classified as other in the last 10 minutes."
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: mempool
+            exp_annotations:
+              summary: "Hyperliquid exporter observed an unknown action type"
+              description: "At least one replica or split-client mempool action was classified as other in the last 10 minutes."
+
+  - name: software outdated requires an enabled healthy update source
+    interval: 1m
+    input_series:
+      - series: 'hl_software_up_to_date{job="hyperliquid",instance="outdated"}'
+        values: '0x66'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="outdated",source="update"}'
+        values: '1x66'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="outdated",source="update"}'
+        values: '1x66'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="outdated",source="update"}'
+        values: '1x66'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="outdated",source="update"}'
+        values: '1x66'
+      - series: 'hl_software_up_to_date{job="hyperliquid",instance="disabled"}'
+        values: '0x66'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="disabled",source="update"}'
+        values: '0x66'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="disabled",source="update"}'
+        values: '1x66'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="disabled",source="update"}'
+        values: '1x66'
+    alert_rule_test:
+      - eval_time: 65m
+        alertname: SoftwareOutdated
+        exp_alerts:
+          - exp_labels:
+              severity: info
+              job: hyperliquid
+              instance: outdated
+            exp_annotations:
+              summary: "Local hl-visor binary is out of date"
+              description: "The enabled update check reports that the local hl-visor does not match the latest published binary."
+
+  - name: validator API stale fallback fires
+    interval: 1m
+    input_series:
+      - series: 'hl_validator_api_up{job="hyperliquid",instance="node-a"}'
+        values: '0x7'
+      - series: 'hl_validator_api_cache_stale{job="hyperliquid",instance="node-a"}'
+        values: '1x7'
+      - series: 'hl_validator_api_up{job="hyperliquid",instance="fresh"}'
+        values: '1x7'
+      - series: 'hl_validator_api_cache_stale{job="hyperliquid",instance="fresh"}'
+        values: '0x7'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: HyperliquidValidatorAPIStaleFallback
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+            exp_annotations:
+              summary: "Validator API refresh is using stale fallback data"
+              description: "Validator-summary refresh failed and stale cached data has been in use for 5 minutes."
+
+  - name: stale tmp material requires a complete source scan
+    interval: 1m
+    input_series:
+      - series: 'hl_node_tmp_material_stale_bytes{job="hyperliquid",instance="node-a"}'
+        values: '67108864x17'
+      - series: 'hl_node_tmp_scan_up{job="hyperliquid",instance="node-a"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="node-a",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="node-a",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="node-a",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="node-a",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_node_tmp_material_stale_bytes{job="hyperliquid",instance="failed"}'
+        values: '67108864x17'
+      - series: 'hl_node_tmp_scan_up{job="hyperliquid",instance="failed"}'
+        values: '0x17'
+      - series: 'hl_exporter_source_enabled{job="hyperliquid",instance="failed",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_ever_observed{job="hyperliquid",instance="failed",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_read_ok{job="hyperliquid",instance="failed",source="tmp_dir"}'
+        values: '1x17'
+      - series: 'hl_exporter_source_schema_ok{job="hyperliquid",instance="failed",source="tmp_dir"}'
+        values: '1x17'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: HyperliquidTmpMaterialStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              job: hyperliquid
+              instance: node-a
+            exp_annotations:
+              summary: "Stale non-receipt tmp data is accumulating"
+              description: "The latest complete tmp scan found at least 64 MiB of non-receipt material older than 24 hours."

@@ -1,0 +1,5 @@
+# The image is assembled entirely from the verified upstream release asset.
+# Keep credentials, generated Compose files, repository metadata, node data,
+# and the rest of this repository out of the BuildKit context.
+*
+!docker/Dockerfile

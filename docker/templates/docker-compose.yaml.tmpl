@@ -15,16 +15,20 @@ services:
         EXPORTER_VERSION: ${EXPORTER_VERSION}
     image: purrmetheus/hl_exporter:${EXPORTER_VERSION}
     container_name: hl_exporter
-    hostname: hl_exporter
+    # Host-node mode injects host PID visibility; the reduced Dockerized-node
+    # profile leaves the exporter in its own namespace.
+${EXPORTER_PID_BLOCK}
+${EXPORTER_EXTRA_HOSTS}
     environment:
-      - NODE_HOME=/home/hluser/hl
-      - BINARY_HOME=/home/hluser/bin
+      NODE_HOME: /home/hluser/hl
+      BINARY_HOME: /home/hluser/bin
+      NODE_BINARY: ${COMPOSE_CONTAINER_NODE_BINARY}
     command: ${EXPORTER_CMD}
     volumes:
-      - ../.env:/app/.env:ro
 ${VOLUME_MOUNTS}
-    networks:
-      - purrmetheus
+${NODE_BINARY_MOUNT}
+${CRIT_LOCATIONS_MOUNT}
+${EXPORTER_NETWORK_BLOCK}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8086/livez"]
@@ -34,10 +38,10 @@ ${VOLUME_MOUNTS}
       start_period: 20s
 
   prometheus:
-    image: prom/prometheus:v3.0.1
+    image: prom/prometheus:v3.0.1@sha256:565ee86501224ebbb98fc10b332fa54440b100469924003359edf49cbce374bd
     container_name: prometheus
     hostname: prometheus
-    user: "${USER_ID}:${GROUP_ID}"
+${PROMETHEUS_EXTRA_HOSTS}
     volumes:
       - prometheus_data:/prometheus
       - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -64,18 +68,17 @@ ${VOLUME_MOUNTS}
       start_period: 30s
 
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:11.4.0@sha256:d8ea37798ccc41061a62ab080f2676dda6bf7815558499f901bdb0f533a456fb
     container_name: grafana
     hostname: grafana
-    user: "${USER_ID}:${GROUP_ID}"
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - GF_ANALYTICS_REPORTING_ENABLED=false
-      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
-      - GF_INSTALL_PLUGINS=
+      GF_SECURITY_ADMIN_USER: ${COMPOSE_GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${COMPOSE_GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_INSTALL_PLUGINS: ""
     volumes:
       - grafana_data:/var/lib/grafana
       - ../grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
@@ -97,7 +100,7 @@ ${VOLUME_MOUNTS}
       start_period: 30s
 
   node_exporter:
-    image: prom/node-exporter:v1.8.2
+    image: prom/node-exporter:v1.8.2@sha256:4032c6d5bfd752342c3e631c2f1de93ba6b86c41db6b167b9a35372c139e7706
     container_name: node_exporter
     hostname: node_exporter
     command:
@@ -109,7 +112,11 @@ ${VOLUME_MOUNTS}
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
-      - /:/host/root:ro,rslave
+      # Read-only root visibility is portable across Linux and Docker Desktop.
+      # Docker Desktop rejects rslave propagation because its host root mount
+      # is not marked shared; propagation is optional for node_exporter's
+      # filesystem collector.
+      - /:/host/root:ro
     pid: host
     networks:
       - purrmetheus
